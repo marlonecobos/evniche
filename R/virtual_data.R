@@ -1,5 +1,44 @@
+#' Generate new data based on virtual niche
+#'
+#' @param ell_features list of characteristics that defined the ellipsoid. This
+#' list ca be obtained using the function \code{\link{ell_features}}.
+#' @param from (character) where to generate or sample data from. Options are
+#' "ellipsoid" or "prediction". Default = "ellipsoid" .
+#' @param data matrix or data.frame containing values (at least environmental
+#' coordinates) used to obtain \code{prediction} based on \code{ell_features}.
+#' Needed if \code{from} = "prediction" and the list used in argument
+#' \code{prediction} contains results of class numeric. Not required if the list
+#' used in argument \code{prediction} contains results of class RasterLayer.
+#' @param prediction list of predictions based on \code{ell_features} and
+#' \code{data}, obtained using the function \code{\link{ell_predict}}.
+#' Needed if \code{from} = "prediction".
+#' @param n (numeric) size of data to be generated (number of points).
+#' Default = 100.
+#' @param tol (numeric) the tolerance for detecting linear dependencies.
+#' Default = 1e-8.
+#'
+#' @return
+#'
+#' @usage
+#' virtual_data(ell_features, from = c("ellipsoid", "prediction"),
+#'              data = NULL, prediction = NULL, n = 100, tol = 1e-8)
+#'
+#' @details
+#' Generation of virtual data is done using the function
+#' \code{\link[MASS]{mvrnorm}} when \code{from} = "ellipsoid".
+#'
+#' Virtual data is generated according to suitability values (multivariate
+#' normal probabilities) when \code{from} = "prediction". In this case defining
+#' the arguments \code{data} and \code{prediction} is mandatory if the elements
+#' in \code{prediction} are of class numeric. If elements in \code{prediction}
+#' are of class RasterLayer, \code{data} is not required.
+#'
+#' @importFrom MASS mvrnorm
+#' @importFrom stats na.omit
+#' @importFrom raster rasterToPoints
+#'
+#' @export
 
-# generate data from virtual niche
 virtual_data <- function(ell_features, from = c("ellipsoid", "prediction"),
                          data = NULL, prediction = NULL, n = 100, tol = 1e-8) {
   # detecting potential errors
@@ -13,7 +52,7 @@ virtual_data <- function(ell_features, from = c("ellipsoid", "prediction"),
   level <- ell_features$level
 
   # preparing prediction if needed
-  if (from == "prediction") {
+  if (from[1] == "prediction") {
     if (is.null(data)) {
       stop("Argument 'data' must be defined if 'from' = 'prediction'")
     }
@@ -29,7 +68,7 @@ virtual_data <- function(ell_features, from = c("ellipsoid", "prediction"),
           suit <- prediction$suitability_trunc
         }
       } else {
-        stop("Please 'Run calculations' with truncated suitability")
+        stop("Use function 'ell_predict' to obtain truncated suitability")
       }
     }
   }

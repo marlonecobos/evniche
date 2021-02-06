@@ -2,6 +2,8 @@
 #' @param n_dimensions (numeric) number of dimensions to be considered.
 #' @param semi_axes_length (numeric) length of ellipsoid axes.
 #' @return A numeric value representing the volume of the ellipsoidal niche.
+#' @usage
+#' ell_volume(n_dimensions, semi_axes_length)
 #' @export
 
 ell_volume <- function (n_dimensions, semi_axes_length) {
@@ -35,6 +37,11 @@ ell_volume <- function (n_dimensions, semi_axes_length) {
 #' @return
 #' A list containing the data used and the volume, semi-axes length, and axes
 #' coordinates for the ellipsoid described by the arguments defined.
+#'
+#' @usage
+#' ell_features(centroid, covariance_matrix, level = 0.95)
+#'
+#' @importFrom stats qchisq
 #'
 #' @export
 
