@@ -1,0 +1,35 @@
+Package: evniche
+Type: Package
+Title: Ellipsoid-based Virtual Niches
+Version: 0.0.1
+Authors@R: c(
+    person("Marlon E.", "Cobos", email = "manubio13@gmail.com", role = c("aut","cre")),
+    person("Claudia", "Nunez-Penichet", email = "claununez199o@gmail.com ", role = "aut"),
+    person("Jorge", "Soberon", email = "jsoberon@ku.edu", role = "aut"),
+    person("A. Townsend", "Peterson", email = "town@ku.edu", role = "aut"))
+Maintainer: Marlon E. Cobos <manubio13@gmail.com>
+Date: 2021-02-01
+Description: 
+    Set of tools and shiny application to create and explore ellispoid-based 
+    virtual niches and predictions. 
+URL: https://github.com/marlonecobos/evniche
+BugReports: https://github.com/marlonecobos/evniche/issues
+Imports:
+    data.table (>= 1.12),
+    ellipse (>= 0.4),
+    MASS (>= 7.3),
+    raster (>= 2.6),
+    rgdal (>= 1.4),
+    rgeos (>= 0.3),
+    scales (>= 1.0),
+    shiny (>= 1.5),
+    shinyFiles (>= 0.8),
+    shinythemes (>= 1.1),
+    sp (>= 1.2),
+    stats
+Depends: 
+    R (>= 3.5),
+    shiny (>= 1.5)
+License: GPL3
+Encoding: UTF-8
+LazyData: true
