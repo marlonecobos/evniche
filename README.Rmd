@@ -1,6 +1,6 @@
 ---
 title: "evniche: Ellipsoid-based virtual niches"
-author: "Marlon E. Cobos, Claudia Nunez-Penichet, Divyansh Chawla, and Jorge Soberon"
+author: "Marlon E. Cobos, Claudia Nunez-Penichet, Divyansh Chawla, Jorge Soberon, and A. Townsend Peterson"
 output: 
   github_document:
     toc: yes
