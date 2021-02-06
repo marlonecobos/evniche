@@ -1,0 +1,18 @@
+---
+title: "evniche: Ellipsoid-based virtual niches"
+author: "Marlon E. Cobos, Claudia Nunez-Penichet, Divyansh Chawla, and Jorge Soberon"
+output: 
+  github_document:
+    toc: yes
+    toc_depth: 3
+always_allow_html: true
+---
+
+```{r knitr_init, echo=FALSE, cache=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+opts_chunk$set(echo = TRUE, collapse = TRUE, comment = "#>")
+```
+
+## Project description
+
+Tools and shiny application to create, modify, and explore virtual niches.
