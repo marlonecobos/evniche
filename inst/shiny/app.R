@@ -2,460 +2,465 @@
 ui <- fluidPage(
   theme = shinythemes::shinytheme("superhero"),
 
-  tags$h1(id = "title", "evniche: Ellipsoid-Based Virtual Niches"),
-  br(),
+  titlePanel("evniche: Ellipsoid-Based Virtual Niches"),
 
-  fluidRow(
-    # ---------------
-    # left panel
-    column(
-      width = 3,
-
-      # ---
-      sidebarPanel(
-        tags$head(
-          tags$style(
-          "#title{background-color:#161F47;width:700px;height:50px;text-align:center}
-          #varscsv{background-color:#306297;height:34px;overflow:auto}
-          #varsras{background-color:#306297;height:34px;overflow:auto}
-          #ellmet{background-color:#306297;height:99px;overflow:auto}
-          #pplote{height:85vh !important}
-          #pplotg{height:85vh !important}
-
-          #sep{height:34px} #file_data1{height:34px} #file_data2{height:34px}
-          #lon{height:34px} #lat{height:34px} #elevel{height:34px}
-          #nback{height:34px} #uplot{height:34px} #fnam{height:34px}
-          #form{height:34px} #pwi{height:34px} #phe{height:34px}
-          #units{height:34px} #res{height:34px} #pedir{height:34px}
-          #pexport{height:34px} #ndfrom{height:34px} #ndatn{height:34px}
-          #ndrun{height:34px} #calcrun{height:34px} #trunc{height:34px}
-          #redir{height:34px} #nmeta{height:34px} #nnew{height:34px}
-          #nmaha{height:34px} #nsuit{height:34px} #nsuitin{height:34px}
-          #metexp{height:34px} #newexp{height:34px} #mahexp{height:34px}
-          #suiexp{height:34px} #suinexp{height:34px}
-
-          #v1nam{height:30px} #v2nam{height:30px} #v1min{height:30px}
-          #v2min{height:30px} #v1max{height:30px} #v2max{height:30px}
-          #v3nam{height:30px} #v4nam{height:30px} #v3min{height:30px}
-          #v4min{height:30px} #v3max{height:30px} #v4max{height:30px}
-          #cex{height:30px} #bgcol{height:30px} #axcol{height:30px}
-          #lty{height:30px} #lwd{height:30px} #asp{height:30px}
-          #ptcex{height:30px} #pch{height:30px} #lcol{height:30px}
-          #pcol{height:30px} #lalp{height:30px} #palp{height:30px}
-          #marbo{height:30px} #marle{height:30px} #marto{height:30px}
-          #marri{height:30px}"
-          )
-        ),
-        # ---
-
-        width = 12,
-        tags$h4("Niche features:"),
-
-        ## data
-        tags$h5("Data"),
-        fluidRow(
-          column(width = 5, tags$b(tags$small("Initial data"))),
-          column(width = 4),
-          column(width = 3, conditionalPanel("input.backt == 'CSV'",
-                                             tags$b(tags$small("Sep.")))),
-          style = "height:25px"
-        ),
-        fluidRow(
-          column(
-            width = 5,
-            selectInput("backt", NULL, choices = c("NONE", "CSV", "Raster"))
-          ),
-          column(
-            width = 4,
-            conditionalPanel(
-              "input.backt == 'CSV'",
-              shinyFiles::shinyFilesButton(
-                id = "file_data1", label = "Select file",
-                title = "Select file (.csv)", multiple = FALSE,
-                style = "background-color:#305C98"
-              )
-            ),
-            conditionalPanel(
-              "input.backt == 'Raster'",
-              shinyFiles::shinyFilesButton(
-                id = "file_data2", label = "Select files",
-                title = "Select files (.tif, .asc, or .bil)", multiple = TRUE,
-                style = "background-color:#305C98"
-              )
-            )
-          ),
-          column(width = 3,
-                 conditionalPanel("input.backt == 'CSV'",
-                                  textInput("sep", NULL, value = ",")))
-        ),
-
-        fluidRow(
-          conditionalPanel("input.backt == 'CSV'",
-                           column(width = 6,
-                                  textInput("lon", "Longitude (optional)",
-                                            value = "")),
-                           column(width = 6,
-                                  textInput("lat", "Latitude (optional)",
-                                            value = "")))
-        ),
-
-        ## variables
-        fluidRow(
-          column(width = 8,
-                 conditionalPanel("input.backt != 'NONE'",
-                                  tags$b(tags$small("Available variables")))),
-          column(width = 4, tags$b(tags$small("Ellipsoid limit")))
-        ),
-        fluidRow(
-          column(width = 8,
-                 conditionalPanel("input.backt == 'CSV'",
-                                  textOutput(outputId = "varscsv")),
-                 conditionalPanel("input.backt == 'Raster'",
-                                  textOutput(outputId = "varsras"))),
-          column(width = 4,
-                 numericInput("elevel", NULL, value = 99, min = 1,
-                              max = 99.99, step = 1))
-        ),
-
-        fluidRow(style = "height:10px"),
-        tags$h5("Variable ranges"),
-        fluidRow(
-          column(width = 6, textInput("v1nam", "Variable 1 (name)", value = "")),
-          column(width = 3, textInput("v1min", "Minimum", value = "")),
-          column(width = 3, textInput("v1max", "Maximum", value = ""))
-        ),
-
-        fluidRow(
-          column(width = 6, textInput("v2nam", "Variable 2", value = "")),
-          column(width = 3, textInput("v2min", "Minimum", value = "")),
-          column(width = 3, textInput("v2max", "Maximum", value = ""))
-        ),
-
-        fluidRow(
-          column(width = 6, textInput("v3nam", "Variable 3", value = "")),
-          column(width = 3, textInput("v3min", "Minimum", value = "")),
-          column(width = 3, textInput("v3max", "Maximum", value = ""))
-        ),
-
-        fluidRow(
-          column(width = 6, textInput("v4nam", "Variable 4", value = "")),
-          column(width = 3, textInput("v4min", "Minimum", value = "")),
-          column(width = 3, textInput("v4max", "Maximum", value = ""))
-        ),
-
-        ## covariances
-        conditionalPanel(
-          "input.v1nam != '' & input.v1min != '' & input.v1max != '' &
-          input.v2nam != '' & input.v2min != '' & input.v2max != ''",
-
-          fluidRow(style = "height:10px"),
-          tags$h5("Covariance values"),
-          sliderInput("cov12", "Variables 1-2", min = -1, max = 1,
-                      value = 0, step = 0.1),
-
-          conditionalPanel(
-            "input.v3nam != '' & input.v3min != '' & input.v3max != ''",
-            sliderInput("cov13", "Variables 1-3", min = -1, max = 1,
-                        value = 0, step = 0.1),
-            conditionalPanel(
-              "input.v4nam != '' & input.v4min != '' & input.v4max != ''",
-              sliderInput("cov14", "Variables 1-4", min = -1, max = 1,
-                          value = 0, step = 0.1)
-            ),
-
-            sliderInput("cov23", "Variables 2-3", min = -1, max = 1,
-                        value = 0, step = 0.1),
-
-            conditionalPanel(
-              "input.v4nam != '' & input.v4min != '' & input.v4max != ''",
-              sliderInput("cov24", "Variables 2-4", min = -1, max = 1,
-                          value = 0, step = 0.1),
-              sliderInput("cov34", "Variables 3-4", min = -1, max = 1,
-                          value = 0, step = 0.1)
-            )
-          )
-        )
-      )
-    ),
-    # ---------------
-
-    # ---------------
-    # main panel
-    column(
-      width = 6,
-
-      ## visualization
+  tabsetPanel(
+    tabPanel(title = "Create evniche",
       fluidRow(
-        fluidRow(
-          column(
-            width = 7,
-            tags$h4("Visualization:"),
+        # ---------------
+        # left panel
+        column(
+          width = 3,
+
+          # ---
+          sidebarPanel(
+            tags$head(
+              tags$style(
+              "#title{background-color:#161F47;width:700px;height:50px;text-align:center}
+              #varscsv{background-color:#306297;height:34px;overflow:auto}
+              #varsras{background-color:#306297;height:34px;overflow:auto}
+              #ellmet{background-color:#306297;height:99px;overflow:auto}
+              #pplote{height:85vh !important}
+              #pplotg{height:85vh !important}
+
+              #sep{height:34px} #file_data1{height:34px} #file_data2{height:34px}
+              #lon{height:34px} #lat{height:34px} #elevel{height:34px}
+              #nback{height:34px} #uplot{height:34px} #fnam{height:34px}
+              #form{height:34px} #pwi{height:34px} #phe{height:34px}
+              #units{height:34px} #res{height:34px} #pedir{height:34px}
+              #pexport{height:34px} #ndfrom{height:34px} #ndatn{height:34px}
+              #ndrun{height:34px} #calcrun{height:34px} #trunc{height:34px}
+              #redir{height:34px} #nmeta{height:34px} #nnew{height:34px}
+              #nmaha{height:34px} #nsuit{height:34px} #nsuitin{height:34px}
+              #metexp{height:34px} #newexp{height:34px} #mahexp{height:34px}
+              #suiexp{height:34px} #suinexp{height:34px}
+
+              #v1nam{height:30px} #v2nam{height:30px} #v1min{height:30px}
+              #v2min{height:30px} #v1max{height:30px} #v2max{height:30px}
+              #v3nam{height:30px} #v4nam{height:30px} #v3min{height:30px}
+              #v4min{height:30px} #v3max{height:30px} #v4max{height:30px}
+              #cex{height:30px} #bgcol{height:30px} #axcol{height:30px}
+              #lty{height:30px} #lwd{height:30px} #asp{height:30px}
+              #ptcex{height:30px} #pch{height:30px} #lcol{height:30px}
+              #pcol{height:30px} #lalp{height:30px} #palp{height:30px}
+              #marbo{height:30px} #marle{height:30px} #marto{height:30px}
+              #marri{height:30px}"
+              )
+            ),
+            # ---
+
+            width = 12,
+            tags$h4("Niche features:"),
+
+            ## data
+            tags$h5("Data"),
             fluidRow(
-              column(width = 4, selectInput("space", "Visualization space",
-                                            selected = "Environmental",
-                                            choices = c("Environmental",
-                                                        "Geographic"))),
+              column(width = 5, tags$b(tags$small("Initial data"))),
+              column(width = 4),
+              column(width = 3, conditionalPanel("input.backt == 'CSV'",
+                                                 tags$b(tags$small("Sep.")))),
+              style = "height:25px"
+            ),
+            fluidRow(
+              column(
+                width = 5,
+                selectInput("backt", NULL, choices = c("NONE", "CSV", "Raster"))
+              ),
+              column(
+                width = 4,
+                conditionalPanel(
+                  "input.backt == 'CSV'",
+                  shinyFiles::shinyFilesButton(
+                    id = "file_data1", label = "Select file",
+                    title = "Select file (.csv)", multiple = FALSE,
+                    style = "background-color:#305C98"
+                  )
+                ),
+                conditionalPanel(
+                  "input.backt == 'Raster'",
+                  shinyFiles::shinyFilesButton(
+                    id = "file_data2", label = "Select files",
+                    title = "Select files (.tif, .asc, or .bil)", multiple = TRUE,
+                    style = "background-color:#305C98"
+                  )
+                )
+              ),
+              column(width = 3,
+                     conditionalPanel("input.backt == 'CSV'",
+                                      textInput("sep", NULL, value = ",")))
+            ),
+
+            fluidRow(
+              conditionalPanel("input.backt == 'CSV'",
+                               column(width = 6,
+                                      textInput("lon", "Longitude (optional)",
+                                                value = "")),
+                               column(width = 6,
+                                      textInput("lat", "Latitude (optional)",
+                                                value = "")))
+            ),
+
+            ## variables
+            fluidRow(
+              column(width = 8,
+                     conditionalPanel("input.backt != 'NONE'",
+                                      tags$b(tags$small("Available variables")))),
+              column(width = 4, tags$b(tags$small("Ellipsoid limit")))
+            ),
+            fluidRow(
+              column(width = 8,
+                     conditionalPanel("input.backt == 'CSV'",
+                                      textOutput(outputId = "varscsv")),
+                     conditionalPanel("input.backt == 'Raster'",
+                                      textOutput(outputId = "varsras"))),
               column(width = 4,
+                     numericInput("elevel", NULL, value = 99, min = 1,
+                                  max = 99.99, step = 1))
+            ),
+
+            fluidRow(style = "height:10px"),
+            tags$h5("Variable ranges"),
+            fluidRow(
+              column(width = 6, textInput("v1nam", "Variable 1 (name)", value = "")),
+              column(width = 3, textInput("v1min", "Minimum", value = "")),
+              column(width = 3, textInput("v1max", "Maximum", value = ""))
+            ),
+
+            fluidRow(
+              column(width = 6, textInput("v2nam", "Variable 2", value = "")),
+              column(width = 3, textInput("v2min", "Minimum", value = "")),
+              column(width = 3, textInput("v2max", "Maximum", value = ""))
+            ),
+
+            fluidRow(
+              column(width = 6, textInput("v3nam", "Variable 3", value = "")),
+              column(width = 3, textInput("v3min", "Minimum", value = "")),
+              column(width = 3, textInput("v3max", "Maximum", value = ""))
+            ),
+
+            fluidRow(
+              column(width = 6, textInput("v4nam", "Variable 4", value = "")),
+              column(width = 3, textInput("v4min", "Minimum", value = "")),
+              column(width = 3, textInput("v4max", "Maximum", value = ""))
+            ),
+
+            ## covariances
+            conditionalPanel(
+              "input.v1nam != '' & input.v1min != '' & input.v1max != '' &
+              input.v2nam != '' & input.v2min != '' & input.v2max != ''",
+
+              fluidRow(style = "height:10px"),
+              tags$h5("Covariance values"),
+              sliderInput("cov12", "Variables 1-2", min = -1, max = 1,
+                          value = 0, step = 0.1),
+
+              conditionalPanel(
+                "input.v3nam != '' & input.v3min != '' & input.v3max != ''",
+                sliderInput("cov13", "Variables 1-3", min = -1, max = 1,
+                            value = 0, step = 0.1),
+                conditionalPanel(
+                  "input.v4nam != '' & input.v4min != '' & input.v4max != ''",
+                  sliderInput("cov14", "Variables 1-4", min = -1, max = 1,
+                              value = 0, step = 0.1)
+                ),
+
+                sliderInput("cov23", "Variables 2-3", min = -1, max = 1,
+                            value = 0, step = 0.1),
+
+                conditionalPanel(
+                  "input.v4nam != '' & input.v4min != '' & input.v4max != ''",
+                  sliderInput("cov24", "Variables 2-4", min = -1, max = 1,
+                              value = 0, step = 0.1),
+                  sliderInput("cov34", "Variables 3-4", min = -1, max = 1,
+                              value = 0, step = 0.1)
+                )
+              )
+            )
+          )
+        ),
+        # ---------------
+
+        # ---------------
+        # main panel
+        column(
+          width = 6,
+
+          ## visualization
+          fluidRow(
+            fluidRow(
+              column(
+                width = 7,
+                tags$h4("Visualization:"),
+                fluidRow(
+                  column(width = 4, selectInput("space", "Visualization space",
+                                                selected = "Environmental",
+                                                choices = c("Environmental",
+                                                            "Geographic"))),
+                  column(width = 4,
+                         conditionalPanel(
+                           "input.space == 'Environmental'",
+                           numericInput("nback", "Max. background",
+                                        value = 1000, min = 1, step = 100)),
+                         conditionalPanel(
+                           "input.space == 'Geographic'",
+                           selectInput("layer", "Base layer", selected = "NONE",
+                                       choices = c("NONE")))),
+
+                  column(width = 4,
+                         conditionalPanel(
+                           "input.space == 'Geographic'",
+                           selectInput("laypal", "Color layer",
+                                       selected = "rev. terrain",
+                                       choices = c("#FFFFFF", "#EEEEEE", "#D8FFE6",
+                                                   "#EAF7FF", "#000000", "#6C6C6C",
+                                                   "#152458", "#15582C", "ca. viridis",
+                                                   "ca. magma", "blues", "heat",
+                                                   "terrain", "topo", "rev. terrain"))))
+                ),
+              ),
+              column(width = 5, textOutput(outputId = "ellmet"))
+            ),
+
+
+            conditionalPanel("input.space == 'Environmental'",
+                             plotOutput(outputId = "pplote")),
+
+            conditionalPanel("input.space == 'Geographic'",
+                             plotOutput(outputId = "pplotg"))
+          ),
+
+          ## graphical parameters
+          br(),
+          fluidRow(
+            tags$h4("Graphical parameters:"),
+            fluidRow(
+              column(width = 2, numericInput("marbo", "Margin bottom", value = 4.5,
+                                             min = 0, step = 0.1)),
+              column(width = 2, numericInput("marle", "Margin left", value = 4.5,
+                                             min = 0, step = 0.1)),
+              column(width = 2, numericInput("marto", "Margin top", value = 1,
+                                             min = 0, step = 0.1)),
+              column(width = 2, numericInput("marri", "Margin right", value = 1,
+                                             min = 0, step = 0.1)),
+              column(width = 2, numericInput("asp", "Aspect ratio y/x", value = 1,
+                                             min = 0.1, step = 0.1)),
+              column(width = 2, numericInput("cex", "Magnify", value = 1.2,
+                                             min = 0, step = 0.1))
+            )
+          ),
+
+          fluidRow(
+            fluidRow(
+              column(width = 2, textInput("bgcol", "Background color",
+                                          value = "black")),
+              column(width = 2, textInput("axcol", "Axes color", value = "white")),
+              column(width = 2, numericInput("pch", "Point type", value = 1,
+                                             min = 0, max = 20, step = 1)),
+              column(width = 2, numericInput("ptcex", "Point size", value = 1,
+                                             min = 0, step = 0.1)),
+              column(width = 2,
                      conditionalPanel(
                        "input.space == 'Environmental'",
-                       numericInput("nback", "Max. background",
-                                    value = 1000, min = 1, step = 100)),
+                       textInput("pcol", "Point color", value = "gray65")),
                      conditionalPanel(
                        "input.space == 'Geographic'",
-                       selectInput("layer", "Base layer", selected = "NONE",
-                                   choices = c("NONE")))),
+                       sliderInput("xlim", "X limits", min = -1, max = 1,
+                                   ticks = FALSE, value = c(-0.5, 0.5), step = 0.1)
+                     )),
+              column(width = 2,
+                     conditionalPanel(
+                       "input.space == 'Environmental'",
+                       numericInput("palp", "Point opacity", value = 1,
+                                    min = 0, max = 1, step = 0.1)),
+                     conditionalPanel(
+                       "input.space == 'Geographic'",
+                       sliderInput("ylim", "Y limits", min = -1, max = 1,
+                                   ticks = FALSE, value = c(-0.5, 0.5), step = 0.1)
+                     ))
+            )
+          ),
 
-              column(width = 4,
+          fluidRow(
+            fluidRow(
+              column(width = 2,
                      conditionalPanel(
-                       "input.space == 'Geographic'",
-                       selectInput("laypal", "Color layer",
-                                   selected = "rev. terrain",
-                                   choices = c("#FFFFFF", "#EEEEEE", "#D8FFE6",
-                                               "#EAF7FF", "#000000", "#6C6C6C",
-                                               "#152458", "#15582C", "ca. viridis",
-                                               "ca. magma", "blues", "heat",
-                                               "terrain", "topo", "rev. terrain"))))
+                       "input.space == 'Environmental'",
+                       numericInput("lty", "Line type", value = 1, min = 0,
+                                    max = 6, step = 1))),
+              column(width = 2,
+                     conditionalPanel(
+                       "input.space == 'Environmental'",
+                       numericInput("lwd", "Line width", value = 1, min = 1))),
+              column(width = 2,
+                     conditionalPanel(
+                       "input.space == 'Environmental'",
+                       textInput("lcol", "Line color", value = "yellow"))),
+              column(width = 2,
+                     conditionalPanel(
+                       "input.space == 'Environmental'",
+                       numericInput("lalp", "Line opacity", value = 1,
+                                    min = 0, max = 1, step = 0.1)))
+            )
+          ),
+
+          ## export plot
+          fluidRow(style = "height:10px"),
+          fluidRow(
+            tags$h4("Export plot:"),
+            fluidRow(
+              column(width = 2, textInput("fnam", "File name",
+                                          value = "Vniche_plot")),
+              column(width = 2, selectInput("form", "Format", selected = "PNG",
+                                            choices = c("PNG", "JPG",
+                                                        "TIFF", "BMP"))),
+              column(width = 2, numericInput("pwi", "Width", value = 7, min = 0)),
+              column(width = 2, numericInput("phe", "Height", value = 7, min = 0)),
+              column(width = 2, selectInput("units", "Units", selected = "in",
+                                            choices = c("px", "mm", "cm", "in"))),
+              column(width = 2, numericInput("res", "Resolution (ppi)", value = 300,
+                                             min = 0))
             ),
-          ),
-          column(width = 5, textOutput(outputId = "ellmet"))
+
+            fluidRow(
+              column(
+                width = 2,
+                shinyFiles::shinyDirButton(id = "pedir",
+                                           label = "Directory",
+                                           title = "Select directory",
+                                           style = "background-color:#4F5560")
+              ),
+              column(width = 2, actionButton("pexport", label = "Export plot",
+                                             style = "background-color:#F16D34"))
+            ),
+            br()
+          )
         ),
+        # ---------------
 
+        # ---------------
+        # right panel
+        column(
+          width = 3,
+          sidebarPanel(
+            width = 12,
 
-        conditionalPanel("input.space == 'Environmental'",
-                         plotOutput(outputId = "pplote")),
+            # Analysis options
+            tags$h4("Analysis options:"),
 
-        conditionalPanel("input.space == 'Geographic'",
-                         plotOutput(outputId = "pplotg"))
-      ),
+            ## new data from ellipsoids
+            tags$h5("Generate new data"),
+            fluidRow(
+              column(width = 6, tags$b(tags$small("Using"))),
+              column(width = 3, tags$b(tags$small("N"))),
+              style = "height:25px"
+            ),
+            fluidRow(
+              column(width = 6, selectInput("ndfrom", NULL,
+                                            choices = c("Ellipsoid", "Background"))),
+              column(width = 3, textInput("ndatn", NULL, value = 100)),
+              column(width = 3, actionButton("ndrun", label = "Run",
+                                             style = "background-color:#2C4560"))
+            ),
 
-      ## graphical parameters
-      br(),
-      fluidRow(
-        tags$h4("Graphical parameters:"),
-        fluidRow(
-          column(width = 2, numericInput("marbo", "Margin bottom", value = 4.5,
-                                         min = 0, step = 0.1)),
-          column(width = 2, numericInput("marle", "Margin left", value = 4.5,
-                                         min = 0, step = 0.1)),
-          column(width = 2, numericInput("marto", "Margin top", value = 1,
-                                         min = 0, step = 0.1)),
-          column(width = 2, numericInput("marri", "Margin right", value = 1,
-                                         min = 0, step = 0.1)),
-          column(width = 2, numericInput("asp", "Aspect ratio y/x", value = 1,
-                                         min = 0.1, step = 0.1)),
-          column(width = 2, numericInput("cex", "Magnify", value = 1.2,
-                                         min = 0, step = 0.1))
-        )
-      ),
+            ## other calculations
+            tags$h5("Calculations"),
+            fluidRow(
+              column(width = 6, tags$b(tags$small("Mahalanobis / Suitability"))),
+              column(width = 6, tags$b(tags$small("Truncate suitability")))
+            ),
+            fluidRow(
+              column(width = 6, actionButton("calcrun", label = "Run calculations",
+                                             style = "background-color:#2C4560")),
+              column(width = 6, selectInput("trunc", NULL, selected = "TRUE",
+                                            choices = c("TRUE", "FALSE")))
+            ),
 
-      fluidRow(
-        fluidRow(
-          column(width = 2, textInput("bgcol", "Background color",
-                                      value = "black")),
-          column(width = 2, textInput("axcol", "Axes color", value = "white")),
-          column(width = 2, numericInput("pch", "Point type", value = 1,
-                                         min = 0, max = 20, step = 1)),
-          column(width = 2, numericInput("ptcex", "Point size", value = 1,
-                                         min = 0, step = 0.1)),
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   textInput("pcol", "Point color", value = "gray65")),
-                 conditionalPanel(
-                   "input.space == 'Geographic'",
-                   sliderInput("xlim", "X limits", min = -1, max = 1,
-                               ticks = FALSE, value = c(-0.5, 0.5), step = 0.1)
-                 )),
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   numericInput("palp", "Point opacity", value = 1,
-                                min = 0, max = 1, step = 0.1)),
-                 conditionalPanel(
-                   "input.space == 'Geographic'",
-                   sliderInput("ylim", "Y limits", min = -1, max = 1,
-                               ticks = FALSE, value = c(-0.5, 0.5), step = 0.1)
-                 ))
-        )
-      ),
+            ## display options
+            tags$h5("Display predictions"),
+            fluidRow(
+              column(width = 6, selectInput("dispon", "Display on",
+                                            selected = "New data",
+                                            choices = c("New data", "Background"))),
+              column(width = 6, selectInput("dispred", "Prediction",
+                                            selected = "Mahalanobis",
+                                            choices = c("Mahalanobis",
+                                                        "Suitability",
+                                                        "Suitability trunc.")))
+            ),
 
-      fluidRow(
-        fluidRow(
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   numericInput("lty", "Line type", value = 1, min = 0,
-                                max = 6, step = 1))),
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   numericInput("lwd", "Line width", value = 1, min = 1))),
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   textInput("lcol", "Line color", value = "yellow"))),
-          column(width = 2,
-                 conditionalPanel(
-                   "input.space == 'Environmental'",
-                   numericInput("lalp", "Line opacity", value = 1,
-                                min = 0, max = 1, step = 0.1)))
-        )
-      ),
+            ## color for predictions
+            fluidRow(
+              column(width = 6, selectInput("dispal", "Color palette",
+                                            selected = "ca. viridis",
+                                            choices = c("ca. viridis", "ca. magma",
+                                                        "blues", "heat", "terrain",
+                                                        "topo", "rev. terrain",
+                                                        "bpy")))
+            ),
 
-      ## export plot
-      fluidRow(style = "height:10px"),
-      fluidRow(
-        tags$h4("Export plot:"),
-        fluidRow(
-          column(width = 2, textInput("fnam", "File name",
-                                      value = "Vniche_plot")),
-          column(width = 2, selectInput("form", "Format", selected = "PNG",
-                                        choices = c("PNG", "JPG",
-                                                    "TIFF", "BMP"))),
-          column(width = 2, numericInput("pwi", "Width", value = 7, min = 0)),
-          column(width = 2, numericInput("phe", "Height", value = 7, min = 0)),
-          column(width = 2, selectInput("units", "Units", selected = "in",
-                                        choices = c("px", "mm", "cm", "in"))),
-          column(width = 2, numericInput("res", "Resolution (ppi)", value = 300,
-                                         min = 0))
-        ),
+            ## export result options
+            fluidRow(style = "height:5px"),
+            tags$h4("Export results:"),
 
-        fluidRow(
-          column(
-            width = 2,
-            shinyFiles::shinyDirButton(id = "pedir",
-                                       label = "Directory",
+            ### directory
+            shinyFiles::shinyDirButton(id = "redir",
+                                       label = "Directory for results",
                                        title = "Select directory",
-                                       style = "background-color:#4F5560")
-          ),
-          column(width = 2, actionButton("pexport", label = "Export plot",
-                                         style = "background-color:#F16D34"))
-        ),
-        br()
+                                       style = "background-color:#4F5560"),
+            br(),
+            fluidRow(style = "height:15px"),
+
+            ### export metadata
+            tags$b(tags$small("Niche metadata (new folder name)")),
+            fluidRow(
+              column(width = 8, textInput("nmeta", NULL,
+                                          value = "Niche_meta")),
+              column(width = 4, actionButton("metexp", label = "Export",
+                                             style = "background-color:#F16D34"))
+            ),
+
+            ### export new data
+            tags$b(tags$small("New data")),
+            fluidRow(
+              column(width = 8, textInput("nnew", NULL,
+                                          value = "New_data")),
+              column(width = 4, actionButton("newexp", label = "Export",
+                                             style = "background-color:#F16D34"))
+            ),
+
+            ### export mahalanobis
+            tags$b(tags$small("Mahalanobis")),
+            fluidRow(
+              column(width = 8, textInput("nmaha", NULL,
+                                          value = "Maha_dist")),
+              column(width = 4, actionButton("mahexp", label = "Export",
+                                             style = "background-color:#F16D34"))
+            ),
+
+            ### export suitability
+            tags$b(tags$small("Suitability")),
+            fluidRow(
+              column(width = 8, textInput("nsuit", NULL,
+                                          value = "Suitability")),
+              column(width = 4, actionButton("suiexp", label = "Export",
+                                             style = "background-color:#F16D34"))
+            ),
+
+            ### export truncated suitability
+            tags$b(tags$small("Suitability truncated")),
+            fluidRow(
+              column(width = 8, textInput("nsuitin", NULL,
+                                          value = "Suitability_truncated")),
+              column(width = 4, actionButton("suinexp", label = "Export",
+                                             style = "background-color:#F16D34"))
+            )
+          )
+        )
+        # ---------------
       )
     ),
-    # ---------------
-
-    # ---------------
-    # right panel
-    column(
-      width = 3,
-      sidebarPanel(
-        width = 12,
-
-        # Analysis options
-        tags$h4("Analysis options:"),
-
-        ## new data from ellipsoids
-        tags$h5("Generate new data"),
-        fluidRow(
-          column(width = 6, tags$b(tags$small("Using"))),
-          column(width = 3, tags$b(tags$small("N"))),
-          style = "height:25px"
-        ),
-        fluidRow(
-          column(width = 6, selectInput("ndfrom", NULL,
-                                        choices = c("Ellipsoid", "Background"))),
-          column(width = 3, textInput("ndatn", NULL, value = 100)),
-          column(width = 3, actionButton("ndrun", label = "Run",
-                                         style = "background-color:#2C4560"))
-        ),
-
-        ## other calculations
-        tags$h5("Calculations"),
-        fluidRow(
-          column(width = 6, tags$b(tags$small("Mahalanobis / Suitability"))),
-          column(width = 6, tags$b(tags$small("Truncate suitability")))
-        ),
-        fluidRow(
-          column(width = 6, actionButton("calcrun", label = "Run calculations",
-                                         style = "background-color:#2C4560")),
-          column(width = 6, selectInput("trunc", NULL, selected = "TRUE",
-                                        choices = c("TRUE", "FALSE")))
-        ),
-
-        ## display options
-        tags$h5("Display predictions"),
-        fluidRow(
-          column(width = 6, selectInput("dispon", "Display on",
-                                        selected = "New data",
-                                        choices = c("New data", "Background"))),
-          column(width = 6, selectInput("dispred", "Prediction",
-                                        selected = "Mahalanobis",
-                                        choices = c("Mahalanobis",
-                                                    "Suitability",
-                                                    "Suitability trunc.")))
-        ),
-
-        ## color for predictions
-        fluidRow(
-          column(width = 6, selectInput("dispal", "Color palette",
-                                        selected = "ca. viridis",
-                                        choices = c("ca. viridis", "ca. magma",
-                                                    "blues", "heat", "terrain",
-                                                    "topo", "rev. terrain",
-                                                    "bpy")))
-        ),
-
-        ## export result options
-        fluidRow(style = "height:5px"),
-        tags$h4("Export results:"),
-
-        ### directory
-        shinyFiles::shinyDirButton(id = "redir",
-                                   label = "Directory for results",
-                                   title = "Select directory",
-                                   style = "background-color:#4F5560"),
-        br(),
-        fluidRow(style = "height:15px"),
-
-        ### export metadata
-        tags$b(tags$small("Niche metadata (new folder name)")),
-        fluidRow(
-          column(width = 8, textInput("nmeta", NULL,
-                                      value = "Niche_meta")),
-          column(width = 4, actionButton("metexp", label = "Export",
-                                         style = "background-color:#F16D34"))
-        ),
-
-        ### export new data
-        tags$b(tags$small("New data")),
-        fluidRow(
-          column(width = 8, textInput("nnew", NULL,
-                                      value = "New_data")),
-          column(width = 4, actionButton("newexp", label = "Export",
-                                         style = "background-color:#F16D34"))
-        ),
-
-        ### export mahalanobis
-        tags$b(tags$small("Mahalanobis")),
-        fluidRow(
-          column(width = 8, textInput("nmaha", NULL,
-                                      value = "Maha_dist")),
-          column(width = 4, actionButton("mahexp", label = "Export",
-                                         style = "background-color:#F16D34"))
-        ),
-
-        ### export suitability
-        tags$b(tags$small("Suitability")),
-        fluidRow(
-          column(width = 8, textInput("nsuit", NULL,
-                                      value = "Suitability")),
-          column(width = 4, actionButton("suiexp", label = "Export",
-                                         style = "background-color:#F16D34"))
-        ),
-
-        ### export truncated suitability
-        tags$b(tags$small("Suitability truncated")),
-        fluidRow(
-          column(width = 8, textInput("nsuitin", NULL,
-                                      value = "Suitability_truncated")),
-          column(width = 4, actionButton("suinexp", label = "Export",
-                                         style = "background-color:#F16D34"))
-        )
-      )
-    )
-    # ---------------
+    tabPanel(title = "Analysis"),
+    tabPanel(title = "Visualization")
   )
 )
 
