@@ -1,13 +1,13 @@
 # predict mahalanobis and suitability from ellipsoidal virtual niche
-ell_predict <- function(data, ell_features, longitude = NULL, latitude = NULL,
+ell_predict <- function(data, features, longitude = NULL, latitude = NULL,
                         tol = 1e-60, include_suitability = TRUE,
                         include_truncated = TRUE) {
   # detecting potential errors
   if (missing(data)) {
     stop("Argument 'data' must be defined")
   }
-  if (missing(ell_features)) {
-    stop("Argument 'ell_features' must be defined")
+  if (missing(features)) {
+    stop("Argument 'features' must be defined")
   }
 
   # preparing data and ellipsoid features
@@ -17,9 +17,9 @@ ell_predict <- function(data, ell_features, longitude = NULL, latitude = NULL,
     data <- na.omit(data[])
   }
 
-  cent <- ell_features$centroid
-  cov_mat <- ell_features$covariance_matrix
-  level <- ell_features$level
+  cent <- features$centroid
+  cov_mat <- features$covariance_matrix
+  level <- features$level
   v_cols <- !colnames(data) %in% c(longitude, latitude)
   ndim <- ncol(data[, v_cols])
 
