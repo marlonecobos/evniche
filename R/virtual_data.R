@@ -1,15 +1,15 @@
 #' Generate new data based on virtual niche
 #'
-#' @param ell_features list of characteristics that defined the ellipsoid. This
+#' @param features list of characteristics that defined the ellipsoid. This
 #' list ca be obtained using the function \code{\link{ell_features}}.
 #' @param from (character) where to generate or sample data from. Options are
 #' "ellipsoid" or "prediction". Default = "ellipsoid" .
 #' @param data matrix or data.frame containing values (at least environmental
-#' coordinates) used to obtain \code{prediction} based on \code{ell_features}.
+#' coordinates) used to obtain \code{prediction} based on \code{features}.
 #' Needed if \code{from} = "prediction" and the list used in argument
 #' \code{prediction} contains results of class numeric. Not required if the list
 #' used in argument \code{prediction} contains results of class RasterLayer.
-#' @param prediction list of predictions based on \code{ell_features} and
+#' @param prediction list of predictions based on \code{features} and
 #' \code{data}, obtained using the function \code{\link{ell_predict}}.
 #' Needed if \code{from} = "prediction".
 #' @param n (numeric) size of data to be generated (number of points).
@@ -20,7 +20,7 @@
 #' @return
 #'
 #' @usage
-#' virtual_data(ell_features, from = c("ellipsoid", "prediction"),
+#' virtual_data(features, from = c("ellipsoid", "prediction"),
 #'              data = NULL, prediction = NULL, n = 100, tol = 1e-8)
 #'
 #' @details
@@ -39,17 +39,17 @@
 #'
 #' @export
 
-virtual_data <- function(ell_features, from = c("ellipsoid", "prediction"),
+virtual_data <- function(features, from = c("ellipsoid", "prediction"),
                          data = NULL, prediction = NULL, n = 100, tol = 1e-8) {
   # detecting potential errors
-  if (missing(ell_features)) {
-    stop("Argument 'ell_features' must be defined")
+  if (missing(features)) {
+    stop("Argument 'features' must be defined")
   }
 
   # ellipsoid features
-  cent <- ell_features$centroid
-  cov_mat <- ell_features$covariance_matrix
-  level <- ell_features$level
+  cent <- features$centroid
+  cov_mat <- features$covariance_matrix
+  level <- features$level
 
   # preparing prediction if needed
   if (from[1] == "prediction") {
