@@ -1,3 +1,9 @@
+# hexadecimal from color name
+cname_2hex <- function(color_name) {
+  cname_2rgb <- c(col2rgb(color_name))
+  rgb(cname_2rgb[1], cname_2rgb[2], cname_2rgb[3], maxColorValue = 255)
+}
+
 # ceiling and floor for decimals
 floor_dec <- function(x, level = 1) {
   round(x - (5 * 10^(-level-1)), level)
@@ -86,37 +92,4 @@ var_cov_matrix <- function(variances, covariances = 0) {
   }
 
   return(mat)
-}
-
-
-# print ellipsoid metadata
-print_ell_meta <- function(ell_features, print = TRUE) {
-  tbt <- "&emsp;"
-  cmat <- ell_features$covariance_matrix
-  vars <- colnames(cmat)
-  cm <- vapply(1:nrow(cmat), FUN.VALUE = character(1), function (x) {
-    nu <- max(vapply(cmat[x, ], dec_2round, numeric(1)))
-    paste(paste0("<td>", c(vars[x], round(cmat[x, ], nu)), "</td>"),
-          collapse = "")
-  })
-  cm <- paste(cm, collapse = "</tr><tr>")
-  vrs <- paste(paste0("<th>", vars, "</th>"), collapse = "")
-  cmat <- paste0("<table><tr><th></th>", vrs, "</tr>", "<tr>", cm, "</tr>")
-
-  vol <- round(ell_features$volume, dec_2round(ell_features$volume))
-
-  res <- paste0(
-    "Ellipsoid characteristics:<br/><br/>",
-    "<br/><br/>Limit:", tbt, ell_features$level, "<br/><br/>Volume:", tbt, vol,
-    "Centroid:<br/>",
-    paste0(paste0(names(ell_features$centroid), ":  ", ell_features$centroid),
-           collapse = tbt),
-    "<br/><br/>Covariance matrix:<br/>", cmat
-  )
-
-  if (print == TRUE) {
-    print(ell_features)
-  } else {
-    return(res)
-  }
 }
