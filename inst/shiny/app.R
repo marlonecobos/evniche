@@ -1,5 +1,6 @@
 # UI
 ui <- shinydashboardPlus::dashboardPagePlus(
+  sidebar_fullCollapse = TRUE,
   # theme = shinythemes::shinytheme("superhero"),
 
   header = shinydashboardPlus::dashboardHeaderPlus(title = "evniche", enable_rightsidebar = TRUE,
@@ -8,57 +9,19 @@ ui <- shinydashboardPlus::dashboardPagePlus(
   # ---------------
   # left panel
   sidebar = shinydashboard::dashboardSidebar(
-    column(
-      width = 3,
-
       # ---
-      sidebarPanel(
-        tags$head(
-          tags$style(
-            "#title{background-color:#161F47;width:700px;height:50px;text-align:center}
-          #varscsv{background-color:#306297;height:34px;overflow:auto}
-          #varsras{background-color:#306297;height:34px;overflow:auto}
-          #ellmet{background-color:#306297;height:99px;overflow:auto}
-          #pplote{height:85vh !important}
-          #pplotg{height:85vh !important}
-
-          #sep{height:34px} #file_data1{height:34px} #file_data2{height:34px}
-          #lon{height:34px} #lat{height:34px} #elevel{height:34px}
-          #nback{height:34px} #uplot{height:34px} #fnam{height:34px}
-          #form{height:34px} #pwi{height:34px} #phe{height:34px}
-          #units{height:34px} #res{height:34px} #pedir{height:34px}
-          #pexport{height:34px} #ndfrom{height:34px} #ndatn{height:34px}
-          #ndrun{height:34px} #calcrun{height:34px} #trunc{height:34px}
-          #redir{height:34px} #nmeta{height:34px} #nnew{height:34px}
-          #nmaha{height:34px} #nsuit{height:34px} #nsuitin{height:34px}
-          #metexp{height:34px} #newexp{height:34px} #mahexp{height:34px}
-          #suiexp{height:34px} #suinexp{height:34px}
-
-          #v1nam{height:30px} #v2nam{height:30px} #v1min{height:30px}
-          #v2min{height:30px} #v1max{height:30px} #v2max{height:30px}
-          #v3nam{height:30px} #v4nam{height:30px} #v3min{height:30px}
-          #v4min{height:30px} #v3max{height:30px} #v4max{height:30px}
-          #cex{height:30px} #bgcol{height:30px} #axcol{height:30px}
-          #lty{height:30px} #lwd{height:30px} #asp{height:30px}
-          #ptcex{height:30px} #pch{height:30px} #lcol{height:30px}
-          #pcol{height:30px} #lalp{height:30px} #palp{height:30px}
-          #marbo{height:30px} #marle{height:30px} #marto{height:30px}
-          #marri{height:30px}"
-          )
-        ),
         # ---
 
-        width = 12,
-        tags$h4("Niche features:"),
+        width = 400,
+        h4("Niche features:"),
 
         ## data
-        tags$h5("Data"),
+        h5("Data"),
         fluidRow(
-          column(width = 5, tags$b(tags$small("Initial data"))),
+          column(width = 5, strong("Initial data")),
           column(width = 4),
           column(width = 3, conditionalPanel("input.backt == 'CSV'",
-                                             tags$b(tags$small("Sep.")))),
-          style = "height:25px"
+                                             strong("Sep.")))
         ),
         fluidRow(
           column(
@@ -71,16 +34,14 @@ ui <- shinydashboardPlus::dashboardPagePlus(
               "input.backt == 'CSV'",
               shinyFiles::shinyFilesButton(
                 id = "file_data1", label = "Select file",
-                title = "Select file (.csv)", multiple = FALSE,
-                style = "background-color:#305C98"
+                title = "Select file (.csv)", multiple = FALSE
               )
             ),
             conditionalPanel(
               "input.backt == 'Raster'",
               shinyFiles::shinyFilesButton(
                 id = "file_data2", label = "Select files",
-                title = "Select files (.tif, .asc, or .bil)", multiple = TRUE,
-                style = "background-color:#305C98"
+                title = "Select files (.tif, .asc, or .bil)", multiple = TRUE
               )
             )
           ),
@@ -118,7 +79,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
         ),
 
         fluidRow(style = "height:10px"),
-        tags$h5("Variable ranges"),
+        h5("Variable ranges"),
         fluidRow(
           column(width = 6, textInput("v1nam", "Variable 1 (name)", value = "")),
           column(width = 3, textInput("v1min", "Minimum", value = "")),
@@ -149,7 +110,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
           input.v2nam != '' & input.v2min != '' & input.v2max != ''",
 
           fluidRow(style = "height:10px"),
-          tags$h5("Covariance values"),
+          h5("Covariance values"),
           sliderInput("cov12", "Variables 1-2", min = -1, max = 1,
                       value = 0, step = 0.1),
 
@@ -175,8 +136,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
             )
           )
         )
-      )
-    )
+
   ),
   # ---------------
 
@@ -184,14 +144,14 @@ ui <- shinydashboardPlus::dashboardPagePlus(
   # main panel
   body = shinydashboard::dashboardBody(
     column(
-      width = 6,
+      width = 12,
 
       ## visualization
       fluidRow(
         fluidRow(
           column(
             width = 7,
-            tags$h4("Visualization:"),
+            h4("Visualization:"),
             fluidRow(
               column(width = 4, selectInput("space", "Visualization space",
                                             selected = "Environmental",
@@ -233,7 +193,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
       ## graphical parameters
       br(),
       fluidRow(
-        tags$h4("Graphical parameters:"),
+        h4("Graphical parameters:"),
         fluidRow(
           column(width = 2, numericInput("marbo", "Margin bottom", value = 4.5,
                                          min = 0, step = 0.1)),
@@ -307,7 +267,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
       ## export plot
       fluidRow(style = "height:10px"),
       fluidRow(
-        tags$h4("Export plot:"),
+        h4("Export plot:"),
         fluidRow(
           column(width = 2, textInput("fnam", "File name",
                                       value = "Vniche_plot")),
@@ -327,11 +287,9 @@ ui <- shinydashboardPlus::dashboardPagePlus(
             width = 2,
             shinyFiles::shinyDirButton(id = "pedir",
                                        label = "Directory",
-                                       title = "Select directory",
-                                       style = "background-color:#4F5560")
+                                       title = "Select directory")
           ),
-          column(width = 2, actionButton("pexport", label = "Export plot",
-                                         style = "background-color:#F16D34"))
+          column(width = 2, actionButton("pexport", label = "Export plot"))
         ),
         br()
       )
@@ -342,44 +300,39 @@ ui <- shinydashboardPlus::dashboardPagePlus(
   # ---------------
   # right panel
   rightsidebar = shinydashboardPlus::rightSidebar(
+    width = 400,
     column(
-      width = 3,
-      sidebarPanel(
-        width = 12,
-
+      width = 12,
         # Analysis options
-        tags$h4("Analysis options:"),
+        h4("Analysis options:"),
 
         ## new data from ellipsoids
-        tags$h5("Generate new data"),
+        h5("Generate new data"),
         fluidRow(
-          column(width = 6, tags$b(tags$small("Using"))),
-          column(width = 3, tags$b(tags$small("N"))),
-          style = "height:25px"
+          column(width = 6, strong("Using")),
+          column(width = 3, strong("N"))
         ),
         fluidRow(
           column(width = 6, selectInput("ndfrom", NULL,
                                         choices = c("Ellipsoid", "Background"))),
           column(width = 3, textInput("ndatn", NULL, value = 100)),
-          column(width = 3, actionButton("ndrun", label = "Run",
-                                         style = "background-color:#2C4560"))
+          column(width = 3, actionButton("ndrun", label = "Run"))
         ),
 
         ## other calculations
         tags$h5("Calculations"),
         fluidRow(
-          column(width = 6, tags$b(tags$small("Mahalanobis / Suitability"))),
-          column(width = 6, tags$b(tags$small("Truncate suitability")))
+          column(width = 6, strong("Mahalanobis / Suitability")),
+          column(width = 6, strong("Truncate suitability"))
         ),
         fluidRow(
-          column(width = 6, actionButton("calcrun", label = "Run calculations",
-                                         style = "background-color:#2C4560")),
+          column(width = 6, actionButton("calcrun", label = "Run calculations")),
           column(width = 6, selectInput("trunc", NULL, selected = "TRUE",
                                         choices = c("TRUE", "FALSE")))
         ),
 
         ## display options
-        tags$h5("Display predictions"),
+        h5("Display predictions"),
         fluidRow(
           column(width = 6, selectInput("dispon", "Display on",
                                         selected = "New data",
@@ -403,23 +356,20 @@ ui <- shinydashboardPlus::dashboardPagePlus(
 
         ## export result options
         fluidRow(style = "height:5px"),
-        tags$h4("Export results:"),
+        h4("Export results:"),
 
         ### directory
         shinyFiles::shinyDirButton(id = "redir",
                                    label = "Directory for results",
-                                   title = "Select directory",
-                                   style = "background-color:#4F5560"),
-        br(),
-        fluidRow(style = "height:15px"),
+                                   title = "Select directory"),
+        br(), br(),
 
         ### export metadata
-        tags$b(tags$small("Niche metadata (new folder name)")),
+       strong("Niche metadata (new folder name)"),
         fluidRow(
           column(width = 8, textInput("nmeta", NULL,
                                       value = "Niche_meta")),
-          column(width = 4, actionButton("metexp", label = "Export",
-                                         style = "background-color:#F16D34"))
+          column(width = 4, actionButton("metexp", label = "Export"))
         ),
 
         ### export new data
@@ -427,8 +377,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
         fluidRow(
           column(width = 8, textInput("nnew", NULL,
                                       value = "New_data")),
-          column(width = 4, actionButton("newexp", label = "Export",
-                                         style = "background-color:#F16D34"))
+          column(width = 4, actionButton("newexp", label = "Export"))
         ),
 
         ### export mahalanobis
@@ -436,8 +385,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
         fluidRow(
           column(width = 8, textInput("nmaha", NULL,
                                       value = "Maha_dist")),
-          column(width = 4, actionButton("mahexp", label = "Export",
-                                         style = "background-color:#F16D34"))
+          column(width = 4, actionButton("mahexp", label = "Export"))
         ),
 
         ### export suitability
@@ -445,8 +393,7 @@ ui <- shinydashboardPlus::dashboardPagePlus(
         fluidRow(
           column(width = 8, textInput("nsuit", NULL,
                                       value = "Suitability")),
-          column(width = 4, actionButton("suiexp", label = "Export",
-                                         style = "background-color:#F16D34"))
+          column(width = 4, actionButton("suiexp", label = "Export"))
         ),
 
         ### export truncated suitability
@@ -454,10 +401,8 @@ ui <- shinydashboardPlus::dashboardPagePlus(
         fluidRow(
           column(width = 8, textInput("nsuitin", NULL,
                                       value = "Suitability_truncated")),
-          column(width = 4, actionButton("suinexp", label = "Export",
-                                         style = "background-color:#F16D34"))
+          column(width = 4, actionButton("suinexp", label = "Export"))
         )
-      )
     )
   )
   # ---------------
