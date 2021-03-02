@@ -1,13 +1,13 @@
 # UI
-ui <- fluidPage(
-  theme = shinythemes::shinytheme("superhero"),
+ui <- shinydashboardPlus::dashboardPagePlus(
+  # theme = shinythemes::shinytheme("superhero"),
 
-  tags$h1(id = "title", "evniche: Ellipsoid-Based Virtual Niches"),
-  br(),
+  header = shinydashboardPlus::dashboardHeaderPlus(title = "evniche", enable_rightsidebar = TRUE,
+                                                   rightSidebarIcon = "gears"),
 
-  fluidRow(
-    # ---------------
-    # left panel
+  # ---------------
+  # left panel
+  sidebar = shinydashboard::dashboardSidebar(
     column(
       width = 3,
 
@@ -15,7 +15,7 @@ ui <- fluidPage(
       sidebarPanel(
         tags$head(
           tags$style(
-          "#title{background-color:#161F47;width:700px;height:50px;text-align:center}
+            "#title{background-color:#161F47;width:700px;height:50px;text-align:center}
           #varscsv{background-color:#306297;height:34px;overflow:auto}
           #varsras{background-color:#306297;height:34px;overflow:auto}
           #ellmet{background-color:#306297;height:99px;overflow:auto}
@@ -176,11 +176,13 @@ ui <- fluidPage(
           )
         )
       )
-    ),
-    # ---------------
+    )
+  ),
+  # ---------------
 
-    # ---------------
-    # main panel
+  # ---------------
+  # main panel
+  body = shinydashboard::dashboardBody(
     column(
       width = 6,
 
@@ -333,11 +335,13 @@ ui <- fluidPage(
         ),
         br()
       )
-    ),
-    # ---------------
+    )
+  ),
+  # ---------------
 
-    # ---------------
-    # right panel
+  # ---------------
+  # right panel
+  rightsidebar = shinydashboardPlus::rightSidebar(
     column(
       width = 3,
       sidebarPanel(
@@ -455,8 +459,8 @@ ui <- fluidPage(
         )
       )
     )
-    # ---------------
   )
+  # ---------------
 )
 
 
@@ -673,67 +677,67 @@ server <- function(input, output, session) {
   #  if (!is.null(vnvacv$covs)) {
   #    ### preparing data and parameters
   #    datauser$elevel <- input$elevel
-#
+  #
   #    nl <- length(vnvacv$covs)
   #    ppar$mfrow <- c(ceiling(nl / ceiling(sqrt(nl))), ceiling(sqrt(nl)))
-#
+  #
   #    par(mfrow = ppar$mfrow, bg = ppar$cb, cex = ppar$cx, mar = ppar$mar,
   #        col = ppar$ca, col.axis = ppar$ca, col.lab = ppar$ca, fg = ppar$ca)
-#
+  #
   #    covsval <- vector("numeric")
   #    for (i in 1:length(vnvacv$covsel)) {
   #      covsval[i] <- input[[vnvacv$covsel[i]]]
   #    }
   #    vnvacv$coval <- covsval
-#
+  #
   #    matvc <- var_cov_matrix(vnvacv$vars, covariances = vnvacv$coval)
   #    cents <- apply(datauser$namran, 2, mean)
-#
+  #
   #    sel <- gsub("cov", "", vnvacv$covsel)
-#
+  #
   #    ### plotting
   #    for (i in 1:length(vnvacv$covsel)) {
   #      scv <- as.numeric(strsplit(sel[i], "")[[1]])
   #      vp <- datauser$varus[scv]
-#
+  #
   #      ellc1 <- ellipse::ellipse(x = matvc[scv, scv], centre = cents[scv],
   #                                level = datauser$elevel / 100)
-#
+  #
   #      if (!is.null(datain$vrasters) & input$backt == "Raster") {
   #        blims <- apply(rbind(datain$vrasters[, vp], ellc1), 2, range)
   #        plot(blims, col = NA, asp = ppar$asp)
   #        points(datain$vrasters[, vp], col = ppar$cp, pch = ppar$pch,
   #               cex = ppar$pcx)
   #      }
-#
+  #
   #      if (!is.null(datain$vcsvs) & input$backt == "CSV") {
   #        blims <- apply(rbind(datain$vcsvs[, vp], ellc1), 2, range)
   #        plot(blims, col = NA, asp = ppar$asp)
   #        points(datain$vcsvs[, vp], col = ppar$cp, pch = ppar$pch,
   #               cex = ppar$pcx)
   #      }
-#
+  #
   #      if (!is.null(datain$vrasters) & !is.null(datain$vcsvs)) {
   #        blims <- apply(ellc1, 2, range)
   #        plot(blims, col = NA, asp = ppar$asp)
   #      }
-#
+  #
   #      lines(ellc1, col = ppar$cl, lty = ppar$lty, lwd = ppar$lwd)
   #    }
-#
-#
+  #
+  #
   #  } else {
   #    ## only background
   #    par(bg = ppar$cb, cex = ppar$cx, mar = ppar$mar, col = ppar$ca,
   #        col.axis = ppar$ca, col.lab = ppar$ca, fg = ppar$ca)
-#
+  #
   #    if (!is.null(datain$vrasters) & input$backt == "Raster") {
   #      blims <- apply(datain$vrasters[, 1:2], 2, range)
   #      plot(blims, col = NA, asp = ppar$asp)
   #      points(datain$vrasters[, 1:2], col = ppar$cp, pch = ppar$pch,
   #             cex = ppar$pcx)
   #    }
-#
+  #
   #    if (!is.null(datain$vcsvs) & input$backt == "CSV") {
   #      blims <- apply(datain$vcsvs[, 1:2], 2, range)
   #      plot(blims, col = NA, asp = ppar$asp)
@@ -756,7 +760,7 @@ server <- function(input, output, session) {
   # ---------------
   # export plot
   #observeEvent(input$pexport, {
-#
+  #
   #})
   # ---------------
 
@@ -779,11 +783,11 @@ server <- function(input, output, session) {
 
   ## calculations
   #observeEvent(input$ndrun, {
-#
+  #
   #})
-#
+  #
   #observeEvent(input$calcrun, {
-#
+  #
   #})
 
   ## display results
