@@ -75,6 +75,91 @@ plot_2D <- function(features = NULL, background = NULL,
 }
 
 
+
+# plotting ellipsoids 3D multiple panels
+plot_3D <- function(features = NULL, background = NULL,
+                    par_list = list(asp = c(1, 1, 1), cex = 1, col_bg = "black",
+                                    col_material = "white", box = FALSE),
+                    lp_list = list(type_ell = "wire", col_ell = "yellow",
+                                   alpha_ell = 1, size_p = 3, col_p = "green",
+                                   alpha_p = 0.5)) {
+  # initial test
+  if (is.null(features) & is.null(background)) {
+    stop("Either 'features' or 'background' must be defined")
+  }
+
+  # preparing data and parameters
+  if (!is.null(features)) {
+    matvc <- features$covariance_matrix
+    cents <- features$centroid
+    lev <- features$level
+
+    combb <- combn(colnames(matvc), 3)
+  }
+
+  if (!is.null(background) & is.null(features)) {
+    combb <- combn(colnames(background), 3)
+  }
+
+  # par settings
+  nl <- ncol(combb)
+  mfrow <- c(ceiling(nl / ceiling(sqrt(nl))), ceiling(sqrt(nl)))
+
+  #opar3d <- par3d(no.readonly = TRUE)
+  #on.exit(par3d(opar3d))
+
+  rgl::par3d(cex = par_list$cex)
+  rgl::mfrow3d(mfrow[1], mfrow[2])
+
+  # plotting in loop
+  for (i in 1:nl) {
+    labs <- combb[, i]
+    ## ellipse
+    if (!is.null(features)) {
+      ell <- rgl::ellipse3d(x = matvc[combb[, i], combb[, i]],
+                            centre = cents[combb[, i]], level = lev)
+    }
+
+    ## plot
+    ## only background
+    if (!is.null(background) & is.null(features)) {
+      rgl::plot3d(background[, combb[, i]], col = lp_list$col_p,
+                  alpha = lp_list$alpha_p, size = lp_list$size_p,
+                  box = par_list$box, axes = FALSE, xlab = "",
+                  ylab = "", zlab = "")
+    }
+
+    ## only ellipse
+    if (!is.null(features) & is.null(background)) {
+      suppressWarnings(
+        rgl::plot3d(ell, col = lp_list$col_ell, alpha = lp_list$alpha_ell,
+                    type = lp_list$type_ell, box = par_list$box,
+                    axes = FALSE, xlab = "", ylab = "", zlab = "")
+      )
+    }
+
+    ## background and ellipse
+    if (!is.null(background) & !is.null(features)) {
+      rgl::plot3d(background[, combb[, i]], col = lp_list$col_p,
+                  alpha = lp_list$alpha_p, size = lp_list$size_p,
+                  box = par_list$box, axes = FALSE, xlab = "",
+                  ylab = "", zlab = "")
+
+      suppressWarnings(
+        rgl::plot3d(ell, col = lp_list$col_ell, alpha = lp_list$alpha_ell,
+                    type = lp_list$type_ell, add = T)
+      )
+    }
+    bg3d(color = par_list$col_bg)
+    axes3d(color = par_list$col_material, box = par_list$box)
+    title3d(xlab = labs[1], ylab = labs[2], zlab = labs[3],
+            color = par_list$col_material)
+    aspect3d(par_list$asp)
+  }
+}
+
+
+
 # ---------------
 # plotting geographic predictions
 #plot_geography <- function(prediction, base) {
