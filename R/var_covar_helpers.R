@@ -142,6 +142,7 @@ covariance_limits <- function(range, tol = 1e-8) {
       if (is_pos_def(mat1, tol = tol) == TRUE) {
         break()
       } else {
+        add <- ifelse(covs1 <= add, add / 10, add)
         covs1 <- covs1 - add
       }
     }
