@@ -19,6 +19,7 @@
 #'
 #' @return
 #' A matrix or data.frame with the virtual data generated.
+#'
 #' @usage
 #' virtual_data(features, from = c("ellipsoid", "prediction"),
 #'              data = NULL, prediction = NULL, n = 100, tol = 1e-8)
@@ -63,14 +64,14 @@ virtual_data <- function(features, from = c("ellipsoid", "prediction"),
       if (!is.null(prediction$suitability_trunc)) {
         clpre <- class(prediction$suitability_trunc)[1]
         if (clpre == "SpatRaster") {
-          #data <- terra::as.data.frame(data, xy = TRUE)
-          data <- terra::as.data.frame(prediction$suitability_trunc, xy = TRUE)
+          data <- terra::as.data.frame(data, xy = TRUE)
+          suit <- terra::as.data.frame(pred_host1$suitability_trunc)[, 1]
         } else {
           suit <- prediction$suitability_trunc
         }
 
         ## virtual data if prediction
-        v_data <- data[sample(nrow(data), n, prob = suit), c()]
+        v_data <- data[sample(nrow(data), n, prob = suit), ]
 
       } else {
         stop("Use function 'ell_predict' to obtain truncated suitability")
