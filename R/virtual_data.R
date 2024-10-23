@@ -5,7 +5,7 @@
 #' @param from (character) where to generate or sample data from. Options are
 #' "ellipsoid" or "prediction". Default = "ellipsoid" .
 #' @param data matrix or data.frame containing values (at least environmental
-#' coordinates) used to obtain \code{prediction} based on \code{features}.
+#' values) used to obtain \code{prediction} based on \code{features}.
 #' Needed if \code{from} = "prediction" and the list used in argument
 #' \code{prediction} contains results of class numeric. Not required if the list
 #' used in argument \code{prediction} contains results of class RasterLayer.
@@ -18,7 +18,7 @@
 #' Default = 1e-8.
 #'
 #' @return
-#'
+#' A matrix or data.frame with the virtual data generated.
 #' @usage
 #' virtual_data(features, from = c("ellipsoid", "prediction"),
 #'              data = NULL, prediction = NULL, n = 100, tol = 1e-8)
@@ -35,7 +35,7 @@
 #'
 #' @importFrom MASS mvrnorm
 #' @importFrom stats na.omit
-#' @importFrom raster rasterToPoints
+#' @importFrom terra as.data.frame
 #'
 #' @export
 
@@ -54,31 +54,31 @@ virtual_data <- function(features, from = c("ellipsoid", "prediction"),
   # preparing prediction if needed
   if (from[1] == "prediction") {
     if (is.null(data)) {
-      stop("Argument 'data' must be defined if 'from' = 'prediction'")
+      stop("Argument 'data' must be defined if argument 'from' = 'prediction'")
     }
+
     if (is.null(prediction)) {
       stop("Argument 'prediction' must be defined")
     } else {
       if (!is.null(prediction$suitability_trunc)) {
         clpre <- class(prediction$suitability_trunc)[1]
-        if (clpre %in% c("RasterLayer")) {
-          data <- raster::rasterToPoints(data)
-          suit <- na.omit(prediction$suitability_trunc[])
+        if (clpre == "SpatRaster") {
+          #data <- terra::as.data.frame(data, xy = TRUE)
+          data <- terra::as.data.frame(prediction$suitability_trunc, xy = TRUE)
         } else {
           suit <- prediction$suitability_trunc
         }
+
+        ## virtual data if prediction
+        v_data <- data[sample(nrow(data), n, prob = suit), c()]
+
       } else {
         stop("Use function 'ell_predict' to obtain truncated suitability")
       }
     }
-  }
-
-  # calculations
-  if (from[1] == "ellipsoid") {
-    v_data <- MASS::mvrnorm(n = n, mu = cent, Sigma = cov_mat, tol = tol)
-
   } else {
-    v_data <- data[sample(nrow(data), n, prob = suit), ]
+    # virtual data from ellipsoid
+    v_data <- MASS::mvrnorm(n = n, mu = cent, Sigma = cov_mat, tol = tol)
   }
 
   return(v_data)

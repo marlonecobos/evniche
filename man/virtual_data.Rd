@@ -4,23 +4,23 @@
 \alias{virtual_data}
 \title{Generate new data based on virtual niche}
 \usage{
-virtual_data(ell_features, from = c("ellipsoid", "prediction"),
+virtual_data(features, from = c("ellipsoid", "prediction"),
              data = NULL, prediction = NULL, n = 100, tol = 1e-8)
 }
 \arguments{
-\item{ell_features}{list of characteristics that defined the ellipsoid. This
+\item{features}{list of characteristics that defined the ellipsoid. This
 list ca be obtained using the function \code{\link{ell_features}}.}
 
 \item{from}{(character) where to generate or sample data from. Options are
 "ellipsoid" or "prediction". Default = "ellipsoid" .}
 
 \item{data}{matrix or data.frame containing values (at least environmental
-coordinates) used to obtain \code{prediction} based on \code{ell_features}.
+values) used to obtain \code{prediction} based on \code{features}.
 Needed if \code{from} = "prediction" and the list used in argument
 \code{prediction} contains results of class numeric. Not required if the list
 used in argument \code{prediction} contains results of class RasterLayer.}
 
-\item{prediction}{list of predictions based on \code{ell_features} and
+\item{prediction}{list of predictions based on \code{features} and
 \code{data}, obtained using the function \code{\link{ell_predict}}.
 Needed if \code{from} = "prediction".}
 
@@ -31,7 +31,7 @@ Default = 100.}
 Default = 1e-8.}
 }
 \value{
-
+A matrix or data.frame with the virtual data generated.
 }
 \description{
 Generate new data based on virtual niche

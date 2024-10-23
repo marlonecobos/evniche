@@ -1,4 +1,11 @@
-# variance from range and mean
+#' Variance from range
+#' @param range matrix of two rows (minimum and maximum) x as many columns as
+#' variables to consider.
+#' @return vector of variance values for all variables considered.
+#' @usage
+#' var_from_range(range)
+#' @export
+
 var_from_range <- function(range) {
   if (missing(range)) {
     stop("Argument 'range' needs to be defined")
@@ -20,7 +27,6 @@ var_from_range <- function(range) {
 }
 
 
-# helper to test if covariance can be changed in a matrix
 covar_test <- function(variances, covariances, tol = 1e-8) {
   if (missing(variances)) {
     stop("Argument 'variances' must be defined")
@@ -101,7 +107,15 @@ covar_test <- function(variances, covariances, tol = 1e-8) {
 }
 
 
-# get max and min covariances given variances
+#' Covariance value limits given variable ranges
+#' @param range range values for the variables considered.
+#' @param tol a value of tolerance for tests. Default = 1e-8.
+#' @return a data.frame with estimated minimum and maximum covariance values
+#' for the variables, given the ranges provided.
+#' @usage
+#' covariance_limits(range, tol = 1e-8)
+#' @export
+
 covariance_limits <- function(range, tol = 1e-8) {
   if (missing(range)) {
     stop("Argument 'variances' must be defined")

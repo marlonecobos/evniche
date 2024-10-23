@@ -150,11 +150,11 @@ plot_3D <- function(features = NULL, background = NULL,
                     type = lp_list$type_ell, add = T)
       )
     }
-    bg3d(color = par_list$col_bg)
-    axes3d(color = par_list$col_material, box = par_list$box)
-    title3d(xlab = labs[1], ylab = labs[2], zlab = labs[3],
+    rgl::bg3d(color = par_list$col_bg)
+    rgl::axes3d(color = par_list$col_material, box = par_list$box)
+    rgl::title3d(xlab = labs[1], ylab = labs[2], zlab = labs[3],
             color = par_list$col_material)
-    aspect3d(par_list$asp)
+    rgl::aspect3d(par_list$asp)
   }
 }
 

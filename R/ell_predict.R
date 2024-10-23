@@ -12,7 +12,7 @@ ell_predict <- function(data, features, longitude = NULL, latitude = NULL,
 
   # preparing data and ellipsoid features
   cldat <- class(data)[1]
-  if (cldat %in% c("RasterStack", "RasterBrick")) {
+  if (cldat == "SpatRaster") {
     lay <- data[[1]]
     data <- na.omit(data[])
   }
@@ -24,7 +24,7 @@ ell_predict <- function(data, features, longitude = NULL, latitude = NULL,
   ndim <- ncol(data[, v_cols])
 
   # mahalanobis distance
-  if (cldat %in% c("RasterStack", "RasterBrick")) {
+  if (cldat == "SpatRaster") {
     maha <- lay
     ma <- stats::mahalanobis(x = data, center = cent, cov = cov_mat, tol = tol)
     maha[!is.na(maha[])] <- ma
@@ -35,7 +35,7 @@ ell_predict <- function(data, features, longitude = NULL, latitude = NULL,
 
   # suitability
   if (include_suitability == TRUE) {
-    if (cldat %in% c("RasterStack", "RasterBrick")) {
+    if (cldat == "SpatRaster") {
       suit <- lay
       su <- exp(-0.5 * ma)
       suit[!is.na(suit[])] <- su
@@ -47,7 +47,7 @@ ell_predict <- function(data, features, longitude = NULL, latitude = NULL,
     if (include_truncated == TRUE) {
       chi_sq <- stats::qchisq(level, ndim)
 
-      if (cldat %in% c("RasterStack", "RasterBrick")) {
+      if (cldat == "SpatRaster") {
         suit_t <- lay
         suit_t[!is.na(suit_t[])] <- ifelse(ma / chi_sq <= 1, su, 0)
       } else {
