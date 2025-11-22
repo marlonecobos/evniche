@@ -65,7 +65,7 @@ virtual_data <- function(features, from = c("ellipsoid", "prediction"),
         clpre <- class(prediction$suitability_trunc)[1]
         if (clpre == "SpatRaster") {
           data <- terra::as.data.frame(data, xy = TRUE)
-          suit <- terra::as.data.frame(pred_host1$suitability_trunc)[, 1]
+          suit <- terra::as.data.frame(prediction$suitability_trunc)[, 1]
         } else {
           suit <- prediction$suitability_trunc
         }
