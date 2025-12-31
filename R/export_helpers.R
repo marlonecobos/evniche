@@ -1,3 +1,18 @@
+#' Export ellipsoid niche metadata
+#'
+#' @description Saves ellipsoid niche metadata as RData and a TXT file.
+#'
+#' @param path (character) path to the directory where the folder will be created.
+#' @param folder_name (character) name of the folder to be created to save data.
+#' @param parameters a data.frame with initial parameters used to create the niche.
+#' @param features a list of features of the ellipsoid niche obtained with
+#' \code{\link{ell_features}}.
+#' @param overwrite (logical) whether to overwrite the folder if it already exists.
+#' Default = FALSE.
+#'
+#' @return Creates a folder containing a .RData file with parameters and
+#' features, and a .txt file with a summary of the metadata.
+
 export_metadata <- function(path, folder_name, parameters, features,
                             overwrite = FALSE) {
   if (missing(path)) {stop("Argument 'path' must be defined")}
@@ -51,6 +66,19 @@ export_metadata <- function(path, folder_name, parameters, features,
 }
 
 
+#' Open a graphics device to save 2D plots
+#'
+#' @param path (character) path to the directory where the plot will be saved.
+#' @param name (character) name of the file to be saved.
+#' @param format (character) format of the file. Options are "PNG", "JPG", "TIFF".
+#' Default = "PNG".
+#' @param width (numeric) width of the plotting device. Default = 7.
+#' @param height (numeric) height of the plotting device. Default = 7.
+#' @param units (character) units for width and height. Default = "in".
+#' @param res (numeric) resolution of the image. Default = 300.
+#'
+#' @return An open graphics device of the specified format.
+#' @noRd
 explot_device2D <- function(path, name, format = "PNG", width = 7, height = 7,
                             units = "in", res = 300) {
   if (missing(path)) {stop("Argument 'path' must be defined")}

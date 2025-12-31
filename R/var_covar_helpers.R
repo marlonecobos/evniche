@@ -27,6 +27,21 @@ var_from_range <- function(range) {
 }
 
 
+
+#' Test and adjust covariance values
+#'
+#' @description Iteratively tests and adjusts covariance values to find the
+#' boundaries that maintain a positive-definite covariance matrix. This is a
+#' helper function for \code{\link{covariance_limits}}.
+#'
+#' @param variances (numeric) a vector of variances.
+#' @param covariances (numeric) a vector of covariances to be tested.
+#' @param tol (numeric) tolerance for checking positive definiteness.
+#' Default = 1e-8.
+#'
+#' @return A data.frame with the adjusted minimum and maximum valid
+#' covariance values.
+#' @noRd
 covar_test <- function(variances, covariances, tol = 1e-8) {
   if (missing(variances)) {
     stop("Argument 'variances' must be defined")

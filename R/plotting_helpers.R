@@ -1,4 +1,35 @@
-# plotting ellipsoids 2D multiple panels
+#' Plot 2D ellipsoids in multiple panels
+#'
+#' @description Plots all 2D combinations of variables from niche features
+#' or a background dataset.
+#'
+#' @param features a list of features of the ellipsoid niche obtained with
+#' \code{\link{ell_features}}. Default = NULL.
+#' @param background matrix or data.frame of background points to be plotted.
+#' Default = NULL.
+#' @param par_list a list of parameters for plotting.
+#' \itemize{
+#'   \item \code{mar}: margins of the plot.
+#'   \item \code{asp}: aspect ratio.
+#'   \item \code{cex}: character expansion factor.
+#'   \item \code{col_bg}: background color.
+#'   \item \code{col_elem}: color for plot elements (axes, labels).
+#'   \item \code{y_las}: orientation of y-axis labels.
+#' }
+#' @param lp_list a list of parameters for lines and points.
+#' \itemize{
+#'   \item \code{lty}: line type.
+#'   \item \code{lwd}: line width.
+#'   \item \code{col_l}: line color.
+#'   \item \code{alpha_l}: alpha for line color.
+#'   \item \code{pch}: point character.
+#'   \item \code{cex_p}: character expansion factor for points.
+#'   \item \code{col_p}: point color.
+#'   \item \code{alpha_p}: alpha for point color.
+#' }
+#'
+#' @return A 2D plot displaying ellipsoid projections.
+
 plot_2D <- function(features = NULL, background = NULL,
                     par_list = list(mar = c(4.5, 4.5, 1, 1), asp = NA,
                                     cex = 1, col_bg = "black",
@@ -76,7 +107,35 @@ plot_2D <- function(features = NULL, background = NULL,
 
 
 
-# plotting ellipsoids 3D multiple panels
+#' Plot 3D ellipsoids in multiple panels
+#'
+#' @description Plots all 3D combinations of variables from niche features
+#' or a background dataset.
+#'
+#' @param features a list of features of the ellipsoid niche obtained with
+#' \code{\link{ell_features}}. Default = NULL.
+#' @param background matrix or data.frame of background points to be plotted.
+#' Default = NULL.
+#' @param par_list a list of parameters for plotting.
+#' \itemize{
+#'   \item \code{asp}: aspect ratio.
+#'   \item \code{cex}: character expansion factor.
+#'   \item \code{col_bg}: background color.
+#'   \item \code{col_material}: color for plot elements (axes, labels).
+#'   \item \code{box}: logical, whether to draw a box around the plot.
+#' }
+#' @param lp_list a list of parameters for lines and points.
+#' \itemize{
+#'   \item \code{type_ell}: type of ellipsoid visualization (e.g., "wire").
+#'   \item \code{col_ell}: ellipsoid color.
+#'   \item \code{alpha_ell}: alpha for ellipsoid color.
+#'   \item \code{size_p}: size of points.
+#'   \item \code{col_p}: point color.
+#'   \item \code{alpha_p}: alpha for point color.
+#' }
+#'
+#' @return A 3D plot displaying ellipsoid projections.
+
 plot_3D <- function(features = NULL, background = NULL,
                     par_list = list(asp = c(1, 1, 1), cex = 1, col_bg = "black",
                                     col_material = "white", box = FALSE),
