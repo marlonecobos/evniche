@@ -28,173 +28,161 @@ var_from_range <- function(range) {
 
 
 
-#' Test and adjust covariance values
-#'
-#' @description Iteratively tests and adjusts covariance values to find the
-#' boundaries that maintain a positive-definite covariance matrix. This is a
-#' helper function for \code{\link{covariance_limits}}.
-#'
-#' @param variances (numeric) a vector of variances.
-#' @param covariances (numeric) a vector of covariances to be tested.
-#' @param tol (numeric) tolerance for checking positive definiteness.
-#' Default = 1e-8.
-#'
-#' @return A data.frame with the adjusted minimum and maximum valid
-#' covariance values.
+#' is_positive_definite
+#' @description Checks if a matrix is positive-definite by attempting a Cholesky
+#' decomposition.
+#' @param mat A numeric matrix.
+#' @return A logical value indicating if the matrix is positive-definite.
 #' @noRd
-covar_test <- function(variances, covariances, tol = 1e-8) {
-  if (missing(variances)) {
-    stop("Argument 'variances' must be defined")
-  }
-  if (missing(covariances)) {
-    stop("Argument 'covariances' must be defined")
-  }
+is_positive_definite <- function(mat) {
+  # The chol() function will fail if the matrix is not positive definite.
+  # Using try() is an efficient way to check.
+  res <- try(chol(mat), silent = TRUE)
+  return(inherits(res, "matrix"))
+}
 
+
+#' Find maximum covariance for one pair
+#'
+#' @description Uses a binary search algorithm to find the maximum valid
+#' covariance for a single pair of variables, given a fixed set of other
+#' covariance values. The search ensures the resulting variance-covariance
+#' matrix remains positive-definite.
+#'
+#' @param cov_index (numeric) index of the covariance to be tested.
+#' @param variances (numeric) a vector of all variances.
+#' @param covariances (numeric) a vector of all covariances.
+#' @param n_iter (numeric) number of iterations for the binary search.
+#' Default = 50, which provides high precision.
+#'
+#' @return The maximum valid covariance value for the specified pair.
+#' @noRd
+find_max_covariance <- function(cov_index, variances, covariances, n_iter = 50) {
+  # Get indices for the two variables involved in this covariance
   lvar <- length(variances)
-  mat <- var_cov_matrix(variances, covariances)
+  all_pairs <- utils::combn(1:lvar, 2)
+  var_indices <- all_pairs[, cov_index]
 
-  lo <- which(lower.tri(mat))
-  up <- unlist(lapply(1:((lvar - 1)), function(x) {
-    vec <- (lvar * 1:(lvar - 1)) + x
-    if (x > 1) {
-      vec <- vec[-(1:(x - 1))]
-    }
-    vec
-  }))
+  # Theoretical maximum is sqrt(var_i * var_j)
+  high <- sqrt(variances[var_indices[1]] * variances[var_indices[2]])
+  low <- 0
 
-  add <- covariances / 100
+  # Perform binary search
+  for (i in 1:n_iter) {
+    mid <- (low + high) / 2
+    temp_covs <- covariances
+    temp_covs[cov_index] <- mid
 
-  covss <- vector(mode = "numeric")
+    mat <- var_cov_matrix(variances, temp_covs)
 
-  for (x in 1:length(covariances)) {
-    cov1 <- covariances[x]
-    ad <- add[x]
-    cov1 <- cov1 + ad
-
-    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-
-    if (is_pos_def(mat, tol = tol) == FALSE) {
-      cov1 <- covariances[x]
+    if (is_positive_definite(mat)) {
+      # The matrix is positive-definite, so this 'mid' is a possible value.
+      # Try for a larger one.
+      low <- mid
     } else {
-      cond <- FALSE
-      adp <- c(NA, NA)
-      adp1 <- c(ad, ad)
-
-      while (cond == FALSE) {
-        adp[1] <- cov1
-        mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-
-        if (is_pos_def(mat, tol = tol) == TRUE) {
-          cov1 <- cov1 + ad
-          adp[2] <- cov1
-
-          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-          if (is_pos_def(mat, tol = tol) == TRUE) {
-            cov1 <- cov1 + ad
-          } else {
-            cov1 <- cov1 - ad
-            break()
-          }
-        } else {
-          cov1 <- cov1 - ad
-          adp[2] <- cov1
-
-          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-          if (is_pos_def(mat, tol = tol) == TRUE) {
-            break()
-          } else {
-            cov1 <- cov1 - ad
-          }
-        }
-        if (any(adp %in% adp1)) {
-          ad <- ad / 10
-        }
-        adp1 <- adp
-      }
+      # The matrix is not positive-definite, so 'mid' is too high.
+      high <- mid
     }
-
-    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-
-    covss[x] <- cov1
   }
 
-  return(data.frame(min_covariance = -covss, max_covariance = covss))
+  return(low)
 }
 
 
 #' Covariance value limits given variable ranges
-#' @param range range values for the variables considered.
-#' @param tol a value of tolerance for tests. Default = 1e-8.
-#' @return a data.frame with estimated minimum and maximum covariance values
-#' for the variables, given the ranges provided.
+#'
+#' @description Calculates the minimum and maximum valid covariance values for
+#' pairs of variables to ensure the variance-covariance matrix remains
+#' positive-definite.
+#'
+#' @details
+#' The function uses an efficient and robust approach to find covariance limits:
+#' \itemize{
+#'   \item{\strong{2-Variable Case:}}{For two variables, it uses the direct
+#'   analytical solution: `|cov| < sqrt(var1 * var2)`.}
+#'   \item{\strong{N-Variable Case:}}{For more than two variables, it uses an
+#'   iterative algorithm. It initializes all covariances to zero and then
+#'   repeatedly cycles through each covariance pair. For each pair, it performs
+#'   a binary search (`find_max_covariance`) to find the maximum valid
+#'   covariance, given the current values of all other covariances. This process
+#'   is repeated until the values converge, ensuring a stable and valid set of
+#'   limits.}
+#'   \item{\strong{Positive-Definite Test:}}{Matrix positive-definiteness is
+#'   checked using Cholesky decomposition (`chol()`), which is computationally
+#'   faster and more numerically stable for this purpose than eigenvalue
+#'   decomposition.}
+#' }
+#'
+#' @param range matrix of two rows (minimum and maximum) x as many columns as
+#' variables to consider.
+#' @param tol (numeric) This parameter is kept for compatibility but is no
+#' longer used by the new algorithm. Binary search precision is determined by
+#' `n_iter` in the `find_max_covariance` helper.
+#' @param max_iter (numeric) The maximum number of iterations for the
+#' convergence loop when there are more than 2 variables. Default = 20.
+#' @param convergence_threshold (numeric) The threshold for checking
+#' convergence. The algorithm stops when the maximum change in any covariance
+#' value between iterations is below this threshold. Default = 1e-6.
+#'
+#' @return A data.frame with estimated minimum and maximum covariance values
+#' for each pair of variables.
 #' @usage
-#' covariance_limits(range, tol = 1e-8)
+#' covariance_limits(range, tol = 1e-8, max_iter = 20,
+#'                   convergence_threshold = 1e-6)
 #' @export
+#' @examples
+#' \donttest{
+#' range_matrix <- matrix(c(1, 10, 2, 20, 5, 30), nrow = 2)
+#' colnames(range_matrix) <- c("Var1", "Var2", "Var3")
+#' limits <- covariance_limits(range_matrix)
+#' print(limits)
+#' }
 
-covariance_limits <- function(range, tol = 1e-8) {
+covariance_limits <- function(range, tol = 1e-8, max_iter = 20,
+                              convergence_threshold = 1e-6) {
   if (missing(range)) {
-    stop("Argument 'variances' must be defined")
+    stop("Argument 'range' must be defined")
   }
 
-  # variances from range
+  # Variances from range
   variances <- var_from_range(range)
+  lvar <- length(variances)
+  cnam <- names(variances)
 
-  # rownames matrix
-  rnames <- combn(names(variances), 2)
+  # Generate row names for the output data.frame
+  rnames <- utils::combn(cnam, 2)
   rnames <- vapply(1:ncol(rnames), FUN.VALUE = character(1), function(x) {
     paste0(rnames[, x], collapse = "-")
   })
 
-  # first step, finding relatively good covariances
-  cond <- FALSE
-  varcom <- combn(variances, 2)
-  covs1 <- apply(varcom, 2, mean)
-  add <- covs1 / 100
-
-  while (cond == FALSE) {
-    mat1 <- var_cov_matrix(variances, covs1)
-
-    if (is_pos_def(mat1, tol = tol) == TRUE) {
-      covs1 <- covs1 + add
-
-      mat1 <- var_cov_matrix(variances, covs1)
-      if (is_pos_def(mat1, tol = tol) == TRUE) {
-        covs1 <- covs1 + add
-      } else {
-        covs1 <- covs1 - add
-        break()
-      }
-    } else {
-      covs1 <- covs1 - add
-
-      mat1 <- var_cov_matrix(variances, covs1)
-      if (is_pos_def(mat1, tol = tol) == TRUE) {
-        break()
-      } else {
-        add <- ifelse(covs1 <= add, add / 10, add)
-        covs1 <- covs1 - add
-      }
-    }
-  }
-
-  # second step, test by modifying cov by cov, if needed
-  lvar <- length(variances)
-  if (lvar > 2) {
-    covars <- covar_test(variances, covs1, tol = tol)
-    cond <- identical(covs1, covars$max_covariance)
-
-    if (!cond) {
-      while (cond == FALSE) {
-        ctest <- covars$max_covariance
-        covars <- covar_test(variances, covars$max_covariance, tol = tol)
-        cond <- identical(ctest, covars$max_covariance)
-      }
-    }
-    rownames(covars) <- rnames
-
-    return(covars)
-  } else {
-    return(data.frame(min_covariance = -covs1, max_covariance = covs1,
+  # For 2 variables, use the exact analytical solution
+  if (lvar == 2) {
+    max_cov <- sqrt(variances[1] * variances[2])
+    return(data.frame(min_covariance = -max_cov, max_covariance = max_cov,
                       row.names = rnames))
   }
+
+  # For >2 variables, use iterative binary search
+  n_covs <- ncol(utils::combn(lvar, 2))
+  max_covs <- rep(0, n_covs) # Start with all covariances at 0
+
+  for (iter in 1:max_iter) {
+    prev_max_covs <- max_covs
+
+    # Cycle through each covariance and find its maximum valid value
+    for (i in 1:n_covs) {
+      # Find the max value for cov i, assuming symmetry for min value
+      # We update the vector in place for the next calculation in the loop
+      max_covs[i] <- find_max_covariance(i, variances, max_covs)
+    }
+
+    # Check for convergence
+    if (max(abs(max_covs - prev_max_covs)) < convergence_threshold) {
+      break
+    }
+  }
+
+  return(data.frame(min_covariance = -max_covs, max_covariance = max_covs,
+                    row.names = rnames))
 }
+
