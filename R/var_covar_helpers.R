@@ -28,111 +28,173 @@ var_from_range <- function(range) {
 
 
 
-#' is_positive_definite
-#' @description Checks if a matrix is positive-definite by attempting a Cholesky
-#' decomposition.
-#' @param mat A numeric matrix.
-#' @return A logical value indicating if the matrix is positive-definite.
+#' Test and adjust covariance values
+#'
+#' @description Iteratively tests and adjusts covariance values to find the
+#' boundaries that maintain a positive-definite covariance matrix. This is a
+#' helper function for \code{\link{covariance_limits}}.
+#'
+#' @param variances (numeric) a vector of variances.
+#' @param covariances (numeric) a vector of covariances to be tested.
+#' @param tol (numeric) tolerance for checking positive definiteness.
+#' Default = 1e-8.
+#'
+#' @return A data.frame with the adjusted minimum and maximum valid
+#' covariance values.
 #' @noRd
-is_positive_definite <- function(mat) {
-  # The chol() function will fail if the matrix is not positive definite.
-  # Using try() is an efficient way to check.
-  res <- try(chol(mat), silent = TRUE)
-  return(inherits(res, "matrix"))
+covar_test <- function(variances, covariances, tol = 1e-8) {
+  if (missing(variances)) {
+    stop("Argument 'variances' must be defined")
+  }
+  if (missing(covariances)) {
+    stop("Argument 'covariances' must be defined")
+  }
+
+  lvar <- length(variances)
+  mat <- var_cov_matrix(variances, covariances)
+
+  lo <- which(lower.tri(mat))
+  up <- unlist(lapply(1:((lvar - 1)), function(x) {
+    vec <- (lvar * 1:(lvar - 1)) + x
+    if (x > 1) {
+      vec <- vec[-(1:(x - 1))]
+    }
+    vec
+  }))
+
+  add <- covariances / 100
+
+  covss <- vector(mode = "numeric")
+
+  for (x in 1:length(covariances)) {
+    cov1 <- covariances[x]
+    ad <- add[x]
+    cov1 <- cov1 + ad
+
+    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+
+    if (is_pos_def(mat, tol = tol) == FALSE) {
+      cov1 <- covariances[x]
+    } else {
+      cond <- FALSE
+      adp <- c(NA, NA)
+      adp1 <- c(ad, ad)
+
+      while (cond == FALSE) {
+        adp[1] <- cov1
+        mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+
+        if (is_pos_def(mat, tol = tol) == TRUE) {
+          cov1 <- cov1 + ad
+          adp[2] <- cov1
+
+          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+          if (is_pos_def(mat, tol = tol) == TRUE) {
+            cov1 <- cov1 + ad
+          } else {
+            cov1 <- cov1 - ad
+            break()
+          }
+        } else {
+          cov1 <- cov1 - ad
+          adp[2] <- cov1
+
+          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+          if (is_pos_def(mat, tol = tol) == TRUE) {
+            break()
+          } else {
+            cov1 <- cov1 - ad
+          }
+        }
+        if (any(adp %in% adp1)) {
+          ad <- ad / 10
+        }
+        adp1 <- adp
+      }
+    }
+
+    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+
+    covss[x] <- cov1
+  }
+
+  return(data.frame(min_covariance = -covss, max_covariance = covss))
 }
 
 
 #' Covariance value limits given variable ranges
-#'
-#' @description Calculates the minimum and maximum valid covariance values for
-#' pairs of variables by finding the maximum uniform correlation that can be
-#' applied across all variables simultaneously.
-#'
-#' @details
-#' This function adopts a simple and robust model to define covariance limits.
-#' It finds the largest possible uniform correlation coefficient, `rho`, that can
-#' exist between all pairs of variables simultaneously while keeping the
-#' variance-covariance matrix positive-definite.
-#' \itemize{
-#'   \item{\strong{Method:}}{The function performs a binary search for the
-#'   optimal `rho` within the range [0, 1]. In each step, it constructs a
-#'   correlation matrix where all pairs share the same correlation `rho` and
-#'   tests for positive definiteness. For a matrix to be positive-definite,
-#'   all its eigenvalues must be positive. It is known that for a uniform
-#'   correlation matrix of size `n x n`, the eigenvalues are `1 + (n-1)*rho`
-#'   (1 time) and `1 - rho` (n-1 times). For all eigenvalues to be positive,
-#'   we need `1 - rho > 0`, which means `rho < 1`, and `1 + (n-1)*rho > 0`,
-#'   which means `rho > -1/(n-1)`. The binary search thus finds the maximal
-#'   `rho` in `[-1/(n-1), 1]`.}
-#'   \item{\strong{Output:}}{The returned `max_covariance` vector is derived from
-#'   this single maximal `rho`. The `min_covariance` is derived from the minimal
-#'   `rho`. This ensures the limits are symmetric and intuitive.}
-#'   \item{\strong{Guarantee:}}{A matrix constructed from a scaled version of the
-#'   output (e.g., `max_covariance * 0.8`) is guaranteed to be positive-definite.}
-#' }
-#'
-#' @param range matrix of two rows (minimum and maximum) x as many columns as
-#' variables to consider.
-#'
-#' @return A data.frame with the estimated symmetric minimum and maximum
-#' covariance values for all variable pairs.
+#' @param range range values for the variables considered.
+#' @param tol a value of tolerance for tests. Default = 1e-8.
+#' @return a data.frame with estimated minimum and maximum covariance values
+#' for the variables, given the ranges provided.
 #' @usage
-#' covariance_limits(range)
+#' covariance_limits(range, tol = 1e-8)
 #' @export
-#' @examples
-#' \donttest{
-#' # Four variables
-#' range_matrix <- cbind(Temp = c(10, 25), Precip = c(700, 2800),
-#'                       Humid = c(30, 70), Rad = c(100, 600))
-#' limits <- covariance_limits(range_matrix)
-#'
-#' # Create a valid covariance matrix using the result
-#' # This matrix is guaranteed to be positive-definite
-#' scaled_covs <- limits$max_covariance * 0.8
-#' vars <- evniche:::var_from_range(range_matrix)
-#' valid_matrix <- evniche:::var_cov_matrix(vars, scaled_covs)
-#' print(evniche:::is_positive_definite(valid_matrix)) # TRUE
-#'
-#' # Matrix with limits themselves should also pass due to tolerance
-#' full_covs <- limits$max_covariance
-#' valid_matrix_full <- evniche:::var_cov_matrix(vars, full_covs)
-#' print(evniche:::is_positive_definite(valid_matrix_full)) # TRUE
-#' print(limits)
-#' }
 
-covariance_limits <- function(range) {
+covariance_limits <- function(range, tol = 1e-8) {
   if (missing(range)) {
-    stop("Argument 'range' must be defined")
+    stop("Argument 'variances' must be defined")
   }
 
-  # Variances from range
+  # variances from range
   variances <- var_from_range(range)
-  lvar <- length(variances)
-  cnam <- names(variances)
 
-  # Generate row names for the output data.frame
-  rnames <- utils::combn(cnam, 2)
+  # rownames matrix
+  rnames <- combn(names(variances), 2)
   rnames <- vapply(1:ncol(rnames), FUN.VALUE = character(1), function(x) {
     paste0(rnames[, x], collapse = "-")
   })
 
-  # For a uniform correlation matrix, the minimum possible rho is -1/(n-1)
-  min_rho <- -1 / (lvar - 1)
-  max_rho <- 1.0
+  # first step, finding relatively good covariances
+  cond <- FALSE
+  varcom <- combn(variances, 2)
+  covs1 <- apply(varcom, 2, mean)
+  add <- covs1 / 100
 
-  # Apply a tolerance factor to ensure strict positive definiteness
-  tolerance <- 1 - 1e-9
-  min_rho <- min_rho * tolerance
-  max_rho <- max_rho * tolerance
+  while (cond == FALSE) {
+    mat1 <- var_cov_matrix(variances, covs1)
 
-  # Calculate the covariance values from max_rho and min_rho
-  var_combn <- utils::combn(sqrt(variances), 2)
-  prod_sdevs <- apply(var_combn, 2, prod)
-  
-  max_covs <- max_rho * prod_sdevs
-  min_covs <- min_rho * prod_sdevs
+    if (is_pos_def(mat1, tol = tol) == TRUE) {
+      covs1 <- covs1 + add
 
-  return(data.frame(min_covariance = min_covs,
-                    max_covariance = max_covs, row.names = rnames))
+      mat1 <- var_cov_matrix(variances, covs1)
+      if (is_pos_def(mat1, tol = tol) == TRUE) {
+        covs1 <- covs1 + add
+      } else {
+        covs1 <- covs1 - add
+        break()
+      }
+    } else {
+      covs1 <- covs1 - add
+
+      mat1 <- var_cov_matrix(variances, covs1)
+      if (is_pos_def(mat1, tol = tol) == TRUE) {
+        break()
+      } else {
+        add <- ifelse(covs1 <= add, add / 10, add)
+        covs1 <- covs1 - add
+      }
+    }
+  }
+
+  # second step, test by modifying cov by cov, if needed
+  lvar <- length(variances)
+  if (lvar > 2) {
+    covars <- covar_test(variances, covs1, tol = tol)
+    cond <- identical(covs1, covars$max_covariance)
+
+    if (!cond) {
+      while (cond == FALSE) {
+        ctest <- covars$max_covariance
+        covars <- covar_test(variances, covars$max_covariance, tol = tol)
+        cond <- identical(ctest, covars$max_covariance)
+      }
+    }
+    rownames(covars) <- rnames
+
+    return(covars)
+  } else {
+    return(data.frame(min_covariance = -covs1, max_covariance = covs1,
+                      row.names = rnames))
+  }
 }
-
