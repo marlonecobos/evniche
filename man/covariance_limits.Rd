@@ -4,56 +4,17 @@
 \alias{covariance_limits}
 \title{Covariance value limits given variable ranges}
 \usage{
-covariance_limits(range, tol = 1e-8, max_iter = 20,
-                  convergence_threshold = 1e-6)
+covariance_limits(range, tol = 1e-8)
 }
 \arguments{
-\item{range}{matrix of two rows (minimum and maximum) x as many columns as
-variables to consider.}
+\item{range}{range values for the variables considered.}
 
-\item{tol}{(numeric) This parameter is kept for compatibility but is no
-longer used by the new algorithm. Binary search precision is determined by
-`n_iter` in the `find_max_covariance` helper.}
-
-\item{max_iter}{(numeric) The maximum number of iterations for the
-convergence loop when there are more than 2 variables. Default = 20.}
-
-\item{convergence_threshold}{(numeric) The threshold for checking
-convergence. The algorithm stops when the maximum change in any covariance
-value between iterations is below this threshold. Default = 1e-6.}
+\item{tol}{a value of tolerance for tests. Default = 1e-8.}
 }
 \value{
-A data.frame with estimated minimum and maximum covariance values
-for each pair of variables.
+a data.frame with estimated minimum and maximum covariance values
+for the variables, given the ranges provided.
 }
 \description{
-Calculates the minimum and maximum valid covariance values for
-pairs of variables to ensure the variance-covariance matrix remains
-positive-definite.
-}
-\details{
-The function uses an efficient and robust approach to find covariance limits:
-\itemize{
-  \item{\strong{2-Variable Case:}}{For two variables, it uses the direct
-  analytical solution: `|cov| < sqrt(var1 * var2)`.}
-  \item{\strong{N-Variable Case:}}{For more than two variables, it uses an
-  iterative algorithm. It initializes all covariances to zero and then
-  repeatedly cycles through each covariance pair. For each pair, it performs
-  a binary search (`find_max_covariance`) to find the maximum valid
-  covariance, given the current values of all other covariances. This process
-  is repeated until the values converge, ensuring a stable and valid set of
-  limits.}
-  \item{\strong{Positive-Definite Test:}}{Matrix positive-definiteness is
-  checked using Cholesky decomposition (`chol()`), which is computationally
-  faster and more numerically stable for this purpose than eigenvalue
-  decomposition.}
-}
-}
-\examples{
-\donttest{
-range_matrix <- matrix(c(1, 10, 2, 20, 5, 30), nrow = 2)
-colnames(range_matrix) <- c("Var1", "Var2", "Var3")
-limits <- covariance_limits(range_matrix)
-print(limits)
-}
+Covariance value limits given variable ranges
 }
