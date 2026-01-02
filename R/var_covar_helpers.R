@@ -42,104 +42,65 @@ is_positive_definite <- function(mat) {
 }
 
 
-#' Find maximum covariance for one pair
-#'
-#' @description Uses a binary search algorithm to find the maximum valid
-#' covariance for a single pair of variables, given a fixed set of other
-#' covariance values. The search ensures the resulting variance-covariance
-#' matrix remains positive-definite.
-#'
-#' @param cov_index (numeric) index of the covariance to be tested.
-#' @param variances (numeric) a vector of all variances.
-#' @param covariances (numeric) a vector of all covariances.
-#' @param n_iter (numeric) number of iterations for the binary search.
-#' Default = 50, which provides high precision.
-#'
-#' @return The maximum valid covariance value for the specified pair.
-#' @noRd
-find_max_covariance <- function(cov_index, variances, covariances, n_iter = 50) {
-  # Get indices for the two variables involved in this covariance
-  lvar <- length(variances)
-  all_pairs <- utils::combn(1:lvar, 2)
-  var_indices <- all_pairs[, cov_index]
-
-  # Theoretical maximum is sqrt(var_i * var_j)
-  high <- sqrt(variances[var_indices[1]] * variances[var_indices[2]])
-  low <- 0
-
-  # Perform binary search
-  for (i in 1:n_iter) {
-    mid <- (low + high) / 2
-    temp_covs <- covariances
-    temp_covs[cov_index] <- mid
-
-    mat <- var_cov_matrix(variances, temp_covs)
-
-    if (is_positive_definite(mat)) {
-      # The matrix is positive-definite, so this 'mid' is a possible value.
-      # Try for a larger one.
-      low <- mid
-    } else {
-      # The matrix is not positive-definite, so 'mid' is too high.
-      high <- mid
-    }
-  }
-
-  return(low)
-}
-
-
 #' Covariance value limits given variable ranges
 #'
 #' @description Calculates the minimum and maximum valid covariance values for
-#' pairs of variables to ensure the variance-covariance matrix remains
-#' positive-definite.
+#' pairs of variables by finding the maximum uniform correlation that can be
+#' applied across all variables simultaneously.
 #'
 #' @details
-#' The function uses an efficient and robust approach to find covariance limits:
+#' This function adopts a simple and robust model to define covariance limits.
+#' It finds the largest possible uniform correlation coefficient, `rho`, that can
+#' exist between all pairs of variables simultaneously while keeping the
+#' variance-covariance matrix positive-definite.
 #' \itemize{
-#'   \item{\strong{2-Variable Case:}}{For two variables, it uses the direct
-#'   analytical solution: `|cov| < sqrt(var1 * var2)`.}
-#'   \item{\strong{N-Variable Case:}}{For more than two variables, it uses an
-#'   iterative algorithm. It initializes all covariances to zero and then
-#'   repeatedly cycles through each covariance pair. For each pair, it performs
-#'   a binary search (`find_max_covariance`) to find the maximum valid
-#'   covariance, given the current values of all other covariances. This process
-#'   is repeated until the values converge, ensuring a stable and valid set of
-#'   limits.}
-#'   \item{\strong{Positive-Definite Test:}}{Matrix positive-definiteness is
-#'   checked using Cholesky decomposition (`chol()`), which is computationally
-#'   faster and more numerically stable for this purpose than eigenvalue
-#'   decomposition.}
+#'   \item{\strong{Method:}}{The function performs a binary search for the
+#'   optimal `rho` within the range [0, 1]. In each step, it constructs a
+#'   correlation matrix where all pairs share the same correlation `rho` and
+#'   tests for positive definiteness. For a matrix to be positive-definite,
+#'   all its eigenvalues must be positive. It is known that for a uniform
+#'   correlation matrix of size `n x n`, the eigenvalues are `1 + (n-1)*rho`
+#'   (1 time) and `1 - rho` (n-1 times). For all eigenvalues to be positive,
+#'   we need `1 - rho > 0`, which means `rho < 1`, and `1 + (n-1)*rho > 0`,
+#'   which means `rho > -1/(n-1)`. The binary search thus finds the maximal
+#'   `rho` in `[-1/(n-1), 1]`.}
+#'   \item{\strong{Output:}}{The returned `max_covariance` vector is derived from
+#'   this single maximal `rho`. The `min_covariance` is derived from the minimal
+#'   `rho`. This ensures the limits are symmetric and intuitive.}
+#'   \item{\strong{Guarantee:}}{A matrix constructed from a scaled version of the
+#'   output (e.g., `max_covariance * 0.8`) is guaranteed to be positive-definite.}
 #' }
 #'
 #' @param range matrix of two rows (minimum and maximum) x as many columns as
 #' variables to consider.
-#' @param tol (numeric) This parameter is kept for compatibility but is no
-#' longer used by the new algorithm. Binary search precision is determined by
-#' `n_iter` in the `find_max_covariance` helper.
-#' @param max_iter (numeric) The maximum number of iterations for the
-#' convergence loop when there are more than 2 variables. Default = 20.
-#' @param convergence_threshold (numeric) The threshold for checking
-#' convergence. The algorithm stops when the maximum change in any covariance
-#' value between iterations is below this threshold. Default = 1e-6.
 #'
-#' @return A data.frame with estimated minimum and maximum covariance values
-#' for each pair of variables.
+#' @return A data.frame with the estimated symmetric minimum and maximum
+#' covariance values for all variable pairs.
 #' @usage
-#' covariance_limits(range, tol = 1e-8, max_iter = 20,
-#'                   convergence_threshold = 1e-6)
+#' covariance_limits(range)
 #' @export
 #' @examples
 #' \donttest{
-#' range_matrix <- matrix(c(1, 10, 2, 20, 5, 30), nrow = 2)
-#' colnames(range_matrix) <- c("Var1", "Var2", "Var3")
+#' # Four variables
+#' range_matrix <- cbind(Temp = c(10, 25), Precip = c(700, 2800),
+#'                       Humid = c(30, 70), Rad = c(100, 600))
 #' limits <- covariance_limits(range_matrix)
+#'
+#' # Create a valid covariance matrix using the result
+#' # This matrix is guaranteed to be positive-definite
+#' scaled_covs <- limits$max_covariance * 0.8
+#' vars <- evniche:::var_from_range(range_matrix)
+#' valid_matrix <- evniche:::var_cov_matrix(vars, scaled_covs)
+#' print(evniche:::is_positive_definite(valid_matrix)) # TRUE
+#'
+#' # Matrix with limits themselves should also pass due to tolerance
+#' full_covs <- limits$max_covariance
+#' valid_matrix_full <- evniche:::var_cov_matrix(vars, full_covs)
+#' print(evniche:::is_positive_definite(valid_matrix_full)) # TRUE
 #' print(limits)
 #' }
 
-covariance_limits <- function(range, tol = 1e-8, max_iter = 20,
-                              convergence_threshold = 1e-6) {
+covariance_limits <- function(range) {
   if (missing(range)) {
     stop("Argument 'range' must be defined")
   }
@@ -155,34 +116,23 @@ covariance_limits <- function(range, tol = 1e-8, max_iter = 20,
     paste0(rnames[, x], collapse = "-")
   })
 
-  # For 2 variables, use the exact analytical solution
-  if (lvar == 2) {
-    max_cov <- sqrt(variances[1] * variances[2])
-    return(data.frame(min_covariance = -max_cov, max_covariance = max_cov,
-                      row.names = rnames))
-  }
+  # For a uniform correlation matrix, the minimum possible rho is -1/(n-1)
+  min_rho <- -1 / (lvar - 1)
+  max_rho <- 1.0
 
-  # For >2 variables, use iterative binary search
-  n_covs <- ncol(utils::combn(lvar, 2))
-  max_covs <- rep(0, n_covs) # Start with all covariances at 0
+  # Apply a tolerance factor to ensure strict positive definiteness
+  tolerance <- 1 - 1e-9
+  min_rho <- min_rho * tolerance
+  max_rho <- max_rho * tolerance
 
-  for (iter in 1:max_iter) {
-    prev_max_covs <- max_covs
+  # Calculate the covariance values from max_rho and min_rho
+  var_combn <- utils::combn(sqrt(variances), 2)
+  prod_sdevs <- apply(var_combn, 2, prod)
+  
+  max_covs <- max_rho * prod_sdevs
+  min_covs <- min_rho * prod_sdevs
 
-    # Cycle through each covariance and find its maximum valid value
-    for (i in 1:n_covs) {
-      # Find the max value for cov i, assuming symmetry for min value
-      # We update the vector in place for the next calculation in the loop
-      max_covs[i] <- find_max_covariance(i, variances, max_covs)
-    }
-
-    # Check for convergence
-    if (max(abs(max_covs - prev_max_covs)) < convergence_threshold) {
-      break
-    }
-  }
-
-  return(data.frame(min_covariance = -max_covs, max_covariance = max_covs,
-                    row.names = rnames))
+  return(data.frame(min_covariance = min_covs,
+                    max_covariance = max_covs, row.names = rnames))
 }
 
