@@ -28,97 +28,102 @@ var_from_range <- function(range) {
 
 
 
-#' Test and adjust covariance values
+#' Find covariance bounds using binary search
 #'
-#' @description Iteratively tests and adjusts covariance values to find the
-#' boundaries that maintain a positive-definite covariance matrix. This is a
-#' helper function for \code{\link{covariance_limits}}.
+#' @description Iteratively finds the minimum and maximum bounds for each
+#' covariance pair in a variance-covariance matrix that maintain its
+#' positive-definite property. It uses a binary search for efficiency and
+#' explores each covariance's positive and negative limits independently.
 #'
 #' @param variances (numeric) a vector of variances.
-#' @param covariances (numeric) a vector of covariances to be tested.
-#' @param tol (numeric) tolerance for checking positive definiteness.
-#' Default = 1e-8.
+#' @param vcov_matrix A variance-covariance matrix to be modified. The values
+#' in this matrix serve as the starting context for the search.
+#' @param var_indices A 2-row matrix with column indices of variable pairs
+#' corresponding to the columns of the `range` matrix.
+#' @param order (numeric) The order in which to process the covariance pairs.
+#' @param tol (numeric) Tolerance for checking positive definiteness.
 #'
 #' @return A data.frame with the adjusted minimum and maximum valid
-#' covariance values.
+#' covariance values. The rows are in the original (pre-shuffled) order.
 #' @noRd
-covar_test <- function(variances, covariances, tol = 1e-8) {
-  if (missing(variances)) {
-    stop("Argument 'variances' must be defined")
-  }
-  if (missing(covariances)) {
-    stop("Argument 'covariances' must be defined")
-  }
+find_covariance_bounds <- function(variances, vcov_matrix, var_indices,
+                                   order, tol) {
+  n_covs <- ncol(var_indices)
+  min_covs <- numeric(n_covs)
+  max_covs <- numeric(n_covs)
 
-  lvar <- length(variances)
-  mat <- var_cov_matrix(variances, covariances)
-
-  lo <- which(lower.tri(mat))
-  up <- unlist(lapply(1:((lvar - 1)), function(x) {
-    vec <- (lvar * 1:(lvar - 1)) + x
-    if (x > 1) {
-      vec <- vec[-(1:(x - 1))]
+  # Iterate through covariances in the specified (shuffled) order
+  for (i in order) {
+    v1 <- var_indices[1, i]
+    v2 <- var_indices[2, i]
+    
+    # Temporarily set current covariance to 0 to isolate its effect
+    vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- 0
+    
+    # If matrix is not positive-definite even with a zero covariance,
+    # it means other covariances are already too extreme.
+    # In this unstable state, we cannot find a valid range for this pair.
+    if (!is_pos_def(vcov_matrix, tol)) {
+      min_covs[i] <- 0
+      max_covs[i] <- 0
+      next
     }
-    vec
-  }))
 
-  add <- covariances / 100
-
-  covss <- vector(mode = "numeric")
-
-  for (x in 1:length(covariances)) {
-    cov1 <- covariances[x]
-    ad <- add[x]
-    cov1 <- cov1 + ad
-
-    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-
-    if (is_pos_def(mat, tol = tol) == FALSE) {
-      cov1 <- covariances[x]
+    # --- Find max bound ---
+    good_val <- 0
+    bad_val <- sqrt(variances[v1] * variances[v2]) # Theoretical max
+    
+    vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- bad_val
+    if (is_pos_def(vcov_matrix, tol)) {
+      # If theoretical max is valid, there's no upper bound for this search
+      max_covs[i] <- bad_val
     } else {
-      cond <- FALSE
-      adp <- c(NA, NA)
-      adp1 <- c(ad, ad)
-
-      while (cond == FALSE) {
-        adp[1] <- cov1
-        mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-
-        if (is_pos_def(mat, tol = tol) == TRUE) {
-          cov1 <- cov1 + ad
-          adp[2] <- cov1
-
-          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-          if (is_pos_def(mat, tol = tol) == TRUE) {
-            cov1 <- cov1 + ad
-          } else {
-            cov1 <- cov1 - ad
-            break()
-          }
+      # Binary search for the max boundary
+      for (j in 1:100) { # 100 iterations for precision
+        mid <- (good_val + bad_val) / 2
+        if (abs(bad_val - good_val) < tol) break
+        vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- mid
+        if (is_pos_def(vcov_matrix, tol)) {
+          good_val <- mid
         } else {
-          cov1 <- cov1 - ad
-          adp[2] <- cov1
-
-          mat[lo[x]] <- cov1; mat[up[x]] <- cov1
-          if (is_pos_def(mat, tol = tol) == TRUE) {
-            break()
-          } else {
-            cov1 <- cov1 - ad
-          }
+          bad_val <- mid
         }
-        if (any(adp %in% adp1)) {
-          ad <- ad / 10
-        }
-        adp1 <- adp
       }
+      max_covs[i] <- good_val
     }
 
-    mat[lo[x]] <- cov1; mat[up[x]] <- cov1
+    # --- Find min bound ---
+    good_val <- 0
+    bad_val <- -sqrt(variances[v1] * variances[v2]) # Theoretical min
 
-    covss[x] <- cov1
+    vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- bad_val
+    if (is_pos_def(vcov_matrix, tol)) {
+      min_covs[i] <- bad_val
+    } else {
+      # Binary search for the min boundary
+      for (j in 1:100) {
+        mid <- (good_val + bad_val) / 2
+        if (abs(bad_val - good_val) < tol) break
+        vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- mid
+        if (is_pos_def(vcov_matrix, tol)) {
+          good_val <- mid
+        } else {
+          bad_val <- mid
+        }
+      }
+      min_covs[i] <- good_val
+    }
+    
+    # Update matrix with a neutral value (midpoint of found range) for the
+    # next covariance's context
+    final_mid <- (min_covs[i] + max_covs[i]) / 2
+    vcov_matrix[v1, v2] <- vcov_matrix[v2, v1] <- final_mid
   }
-
-  return(data.frame(min_covariance = -covss, max_covariance = covss))
+  
+  # Return a data.frame with rows in the original, unshuffled order
+  result_df <- data.frame(min_covariance = min_covs,
+                          max_covariance = max_covs)
+  return(result_df)
 }
 
 
@@ -219,13 +224,13 @@ covariance_limits <- function(range, tol = 1e-8) {
   # number of variables
   lvar <- length(variances)
 
-  # rownames matrix
+  # variable pair names for rows
   rnames <- combn(names(variances), 2)
   rnames <- vapply(1:ncol(rnames), FUN.VALUE = character(1), function(x) {
     paste0(rnames[, x], collapse = "-")
   })
 
-  # Special case for two variables
+  # Special case for two variables (direct calculation)
   if (lvar == 2) {
     # For two variables, the covariance limit is the product of their
     # standard deviations. A variance-covariance matrix is positive definite if
@@ -238,53 +243,45 @@ covariance_limits <- function(range, tol = 1e-8) {
     return(data.frame(min_covariance = -max_cov, max_covariance = max_cov,
                       row.names = rnames))
   } else {
-    # General case for more than two variables
+    # General case for > 2 variables (iterative search)
+    n_covs <- ncol(combn(lvar, 2))
 
-    # first step, finding relatively good covariances
-    cond <- FALSE
-    varcom <- combn(variances, 2)
-    covs1 <- apply(varcom, 2, mean)
-    add <- covs1 / 100
+    # Start with a zero-covariance matrix (guaranteed positive definite)
+    suppressMessages(vcov_matrix <- var_cov_matrix(variances, 0))
 
-    while (cond == FALSE) {
-      mat1 <- var_cov_matrix(variances, covs1)
+    # Get variable indices for the find_covariance_bounds helper
+    var_indices <- combn(1:lvar, 2)
 
-      if (is_pos_def(mat1, tol = tol) == TRUE) {
-        covs1 <- covs1 + add
+    # Store previous results to check for convergence
+    prev_bounds <- data.frame(min_covariance = rep(-Inf, n_covs),
+                              max_covariance = rep(Inf, n_covs))
+    current_bounds <- data.frame(min_covariance = rep(NA, n_covs),
+                                 max_covariance = rep(NA, n_covs))
 
-        mat1 <- var_cov_matrix(variances, covs1)
-        if (is_pos_def(mat1, tol = tol) == TRUE) {
-          covs1 <- covs1 + add
-        } else {
-          covs1 <- covs1 - add
-          break()
-        }
-      } else {
-        covs1 <- covs1 - add
+    # Iteratively refine bounds until they stabilize
+    for (iter in 1:100) { # Max 100 iterations to prevent infinite loops
+      # Randomize order of optimization for robustness
+      order <- sample(1:n_covs)
 
-        mat1 <- var_cov_matrix(variances, covs1)
-        if (is_pos_def(mat1, tol = tol) == TRUE) {
-          break()
-        } else {
-          add <- ifelse(covs1 <= add, add / 10, add)
-          covs1 <- covs1 - add
-        }
+      # Find bounds for this iteration
+      current_bounds <- find_covariance_bounds(variances, vcov_matrix,
+                                               var_indices, order, tol)
+
+      # Check for convergence
+      if (isTRUE(all.equal(prev_bounds, current_bounds, tolerance = tol))) {
+        break
       }
+      prev_bounds <- current_bounds
+
+      # Update the main vcov_matrix for the next iteration using the
+      # mid-point of the newly found bounds to serve as a neutral context.
+      mid_points <- (current_bounds$min_covariance +
+                       current_bounds$max_covariance) / 2
+      vcov_matrix[lower.tri(vcov_matrix)] <- mid_points
+      vcov_matrix[upper.tri(vcov_matrix)] <- mid_points
     }
 
-    # second step, test by modifying cov by cov, if needed
-    covars <- covar_test(variances, covs1, tol = tol)
-    cond <- identical(covs1, covars$max_covariance)
-
-    if (!cond) {
-      while (cond == FALSE) {
-        ctest <- covars$max_covariance
-        covars <- covar_test(variances, covars$max_covariance, tol = tol)
-        cond <- identical(ctest, covars$max_covariance)
-      }
-    }
-    rownames(covars) <- rnames
-
-    return(covars)
+    rownames(current_bounds) <- rnames
+    return(current_bounds)
   }
 }
