@@ -216,47 +216,63 @@ covariance_limits <- function(range, tol = 1e-8) {
   # variances from range
   variances <- var_from_range(range)
 
+  # number of variables
+  lvar <- length(variances)
+
   # rownames matrix
   rnames <- combn(names(variances), 2)
   rnames <- vapply(1:ncol(rnames), FUN.VALUE = character(1), function(x) {
     paste0(rnames[, x], collapse = "-")
   })
 
-  # first step, finding relatively good covariances
-  cond <- FALSE
-  varcom <- combn(variances, 2)
-  covs1 <- apply(varcom, 2, mean)
-  add <- covs1 / 100
+  # Special case for two variables
+  if (lvar == 2) {
+    # For two variables, the covariance limit is the product of their
+    # standard deviations. A variance-covariance matrix is positive definite if
+    # the absolute value of the covariance is less than the product of the
+    # standard deviations of the variables.
+    # |Cov(X,Y)| < sd(X) * sd(Y)
+    sds <- sqrt(variances)
+    max_cov <- sds[1] * sds[2]
 
-  while (cond == FALSE) {
-    mat1 <- var_cov_matrix(variances, covs1)
+    return(data.frame(min_covariance = -max_cov, max_covariance = max_cov,
+                      row.names = rnames))
+  } else {
+    # General case for more than two variables
 
-    if (is_pos_def(mat1, tol = tol) == TRUE) {
-      covs1 <- covs1 + add
+    # first step, finding relatively good covariances
+    cond <- FALSE
+    varcom <- combn(variances, 2)
+    covs1 <- apply(varcom, 2, mean)
+    add <- covs1 / 100
 
+    while (cond == FALSE) {
       mat1 <- var_cov_matrix(variances, covs1)
+
       if (is_pos_def(mat1, tol = tol) == TRUE) {
         covs1 <- covs1 + add
-      } else {
-        covs1 <- covs1 - add
-        break()
-      }
-    } else {
-      covs1 <- covs1 - add
 
-      mat1 <- var_cov_matrix(variances, covs1)
-      if (is_pos_def(mat1, tol = tol) == TRUE) {
-        break()
+        mat1 <- var_cov_matrix(variances, covs1)
+        if (is_pos_def(mat1, tol = tol) == TRUE) {
+          covs1 <- covs1 + add
+        } else {
+          covs1 <- covs1 - add
+          break()
+        }
       } else {
-        add <- ifelse(covs1 <= add, add / 10, add)
         covs1 <- covs1 - add
+
+        mat1 <- var_cov_matrix(variances, covs1)
+        if (is_pos_def(mat1, tol = tol) == TRUE) {
+          break()
+        } else {
+          add <- ifelse(covs1 <= add, add / 10, add)
+          covs1 <- covs1 - add
+        }
       }
     }
-  }
 
-  # second step, test by modifying cov by cov, if needed
-  lvar <- length(variances)
-  if (lvar > 2) {
+    # second step, test by modifying cov by cov, if needed
     covars <- covar_test(variances, covs1, tol = tol)
     cond <- identical(covs1, covars$max_covariance)
 
@@ -270,8 +286,5 @@ covariance_limits <- function(range, tol = 1e-8) {
     rownames(covars) <- rnames
 
     return(covars)
-  } else {
-    return(data.frame(min_covariance = -covs1, max_covariance = covs1,
-                      row.names = rnames))
   }
 }
