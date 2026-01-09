@@ -73,3 +73,109 @@ round_covlimstep <- function(min, max) {
 centroid <- function(range) {
   return(apply(range, 2, mean))
 }
+
+
+
+#' Suggest scaling factors for variables
+#'
+#' @description
+#' Suggests simple scaling factors (powers of 10) to bring the magnitude of
+#' variables closer to a target value. This can be useful for improving the
+#' numerical stability of algorithms that are sensitive to the scale of input
+#' data or for making results easier to interpret.
+#'
+#' @param range_matrix A matrix or data.frame with two rows (minimum and
+#' maximum) and as many columns as variables. Column names should match the
+#' variable names to be scaled.
+#' @param target_magnitude (numeric) The desired order of magnitude for the
+#' variables after scaling. Default = 10.
+#'
+#' @return A data.frame with three columns: `Variable` (the name of the
+#' variable), `Scaling_Value` (the factor to multiply or divide by), and
+#' `Operation` (either "multiply", "divide", or "none").
+#'
+#' @export
+#' @examples
+#' # Create a range matrix for variables with different scales
+#' range_data <- data.frame(var_small = c(0.01, 0.05),
+#'                          var_large = c(1000, 5000),
+#'                          var_medium = c(5, 12))
+#'
+#' # Get scaling suggestions
+#' scaling_suggestions <- suggest_scaling(range_data)
+#' print(scaling_suggestions)
+#'
+#' # Create a sample dataset
+#' my_data <- data.frame(var_small = c(0.02, 0.03, 0.04),
+#'                       var_large = c(1500, 3000, 4500),
+#'                       var_medium = c(6, 8, 10))
+#'
+#' # Apply the scaling suggestions
+#' scaled_data <- apply_scaling(my_data, scaling_suggestions)
+#' print(scaled_data)
+suggest_scaling <- function(range_matrix, target_magnitude = 10) {
+  vars <- colnames(range_matrix)
+
+  # Calculate the mid-point of each range to determine the general scale
+  midpoints <- colMeans(range_matrix)
+
+  # Calculate the power of 10 needed
+  # log10(target/mid) gives the exponent. Rounding it gives us the nearest clean power.
+  exponents <- round(log10(target_magnitude / midpoints))
+
+  scaling_values <- 10^abs(exponents)
+  operations <- ifelse(exponents >= 0, "multiply", "divide")
+
+  # For cases where the scale is already perfect (exponent 0)
+  operations[exponents == 0] <- "none"
+  scaling_values[exponents == 0] <- 1
+
+  res <- data.frame(
+    Variable = vars,
+    Scaling_Value = scaling_values,
+    Operation = operations,
+    stringsAsFactors = FALSE
+  )
+
+  return(res)
+}
+
+
+
+#' Apply suggested scaling factors to data
+#'
+#' @description
+#' Applies the scaling operations suggested by \code{\link{suggest_scaling}}
+#' to a dataset.
+#'
+#' @param data A data.frame or matrix containing the data to be scaled.
+#' Column names should match the 'Variable' column in `scaling_df`.
+#' @param scaling_df A data.frame produced by \code{\link{suggest_scaling}},
+#' containing the instructions on how to scale each variable.
+#'
+#' @return A new data.frame or matrix with the data scaled according to the
+#' provided instructions.
+#'
+#' @export
+#' @examples
+#' # For a complete example, please see the documentation for `suggest_scaling`.
+#' # ?suggest_scaling
+apply_scaling <- function(data, scaling_df) {
+  # Work on a copy to avoid overwriting original data
+  data_scaled <- data
+
+  for (i in 1:nrow(scaling_df)) {
+    var <- scaling_df$Variable[i]
+    val <- scaling_df$Scaling_Value[i]
+    op  <- scaling_df$Operation[i]
+
+    if (var %in% colnames(data_scaled)) {
+      if (op == "multiply") {
+        data_scaled[, var] <- data_scaled[, var] * val
+      } else if (op == "divide") {
+        data_scaled[, var] <- data_scaled[, var] / val
+      }
+    }
+  }
+  return(data_scaled)
+}
