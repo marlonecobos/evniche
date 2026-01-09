@@ -35,19 +35,20 @@ var_from_range <- function(range) {
 #' positive-definite property. It uses a binary search for efficiency and
 #' explores each covariance's positive and negative limits independently.
 #'
-#' @param variances (numeric) a vector of variances.
 #' @param vcov_matrix A variance-covariance matrix to be modified. The values
 #' in this matrix serve as the starting context for the search.
-#' @param var_indices A 2-row matrix with column indices of variable pairs
-#' corresponding to the columns of the `range` matrix.
 #' @param order (numeric) The order in which to process the covariance pairs.
 #' @param tol (numeric) Tolerance for checking positive definiteness.
 #'
 #' @return A data.frame with the adjusted minimum and maximum valid
 #' covariance values. The rows are in the original (pre-shuffled) order.
 #' @noRd
-find_covariance_bounds <- function(variances, vcov_matrix, var_indices,
-                                   order, tol) {
+find_covariance_bounds <- function(vcov_matrix, order, tol) {
+  # Derive variances and variable indices from the input matrix
+  variances <- diag(vcov_matrix)
+  lvar <- nrow(vcov_matrix)
+  var_indices <- combn(1:lvar, 2)
+
   n_covs <- ncol(var_indices)
   min_covs <- numeric(n_covs)
   max_covs <- numeric(n_covs)
@@ -249,9 +250,6 @@ covariance_limits <- function(range, tol = 1e-8) {
     # Start with a zero-covariance matrix (guaranteed positive definite)
     suppressMessages(vcov_matrix <- var_cov_matrix(variances, 0))
 
-    # Get variable indices for the find_covariance_bounds helper
-    var_indices <- combn(1:lvar, 2)
-
     # Store previous results to check for convergence
     prev_bounds <- data.frame(min_covariance = rep(-Inf, n_covs),
                               max_covariance = rep(Inf, n_covs))
@@ -264,8 +262,7 @@ covariance_limits <- function(range, tol = 1e-8) {
       order <- sample(1:n_covs)
 
       # Find bounds for this iteration
-      current_bounds <- find_covariance_bounds(variances, vcov_matrix,
-                                               var_indices, order, tol)
+      current_bounds <- find_covariance_bounds(vcov_matrix, order, tol)
 
       # Check for convergence
       if (isTRUE(all.equal(prev_bounds, current_bounds, tolerance = tol))) {
